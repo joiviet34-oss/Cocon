@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ─── USERS ───────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ─── FEEDBACK ────────────────────────────────
+    match /feedback/{feedbackId} {
+      allow create: if true;
+      allow read: if false;
+    }
+    
+    // ─── PROJECTS ────────────────────────────────
+    match /projects/{projectId} {
+      // Owner can do everything
+      allow read, write: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      
+      // Allow creation if authenticated
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      
+      // Shared access: anyone with the shareId can read (collab + public)
+      allow read: if resource.data.shareId != null;
+      
+      // ─── ITEMS (subcollection) ─────────────────
+      match /items/{itemId} {
+        // Owner of parent project can CRUD
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        
+        // Anyone can read items (for public shared view)
+        allow read: if true;
+        
+        // Authenticated users can create/update (for votes, etc.)
+        allow create, update: if request.auth != null;
+      }
+      
+      // ─── COMMENTS (subcollection) ──────────────
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      }
+      
+      // ─── POST-ITS (subcollection) ──────────────
+      match /postits/{postitId} {
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        
+        // Shared users can read
+        allow read: if request.auth != null;
+      }
+      
+      // ─── MEASURES (subcollection) ──────────────
+      match /measures/{measureId} {
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow read: if request.auth != null;
+      }
+      
+      // ─── PLANS (subcollection) ─────────────────
+      match /plans/{planId} {
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        allow read: if request.auth != null;
+      }
+    }
+  }
+}

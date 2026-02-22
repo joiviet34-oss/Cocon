@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page introuvable — Cocon</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#C4704B">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --cream: #FAF7F2; --charcoal: #1A1714; --terracotta: #C4704B; --deep-brown: #3D3229; --sand: #E8DDD3; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Instrument Sans', sans-serif; background: var(--cream); color: var(--deep-brown); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+        .logo { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.5rem; color: var(--charcoal); text-decoration: none; margin-bottom: 3rem; }
+        .logo span { color: var(--terracotta); }
+        .code { font-size: 6rem; font-family: 'DM Serif Display', Georgia, serif; color: var(--sand); line-height: 1; }
+        h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.8rem; color: var(--charcoal); margin: 1rem 0 0.5rem; }
+        p { font-size: 0.95rem; color: var(--deep-brown); opacity: 0.6; max-width: 400px; margin-bottom: 2rem; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.5rem; background: var(--terracotta); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.88rem; transition: transform 0.2s, box-shadow 0.2s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(196,112,75,0.3); }
+        .links { margin-top: 1.5rem; display: flex; gap: 1.5rem; }
+        .links a { color: var(--terracotta); font-size: 0.82rem; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <a href="/" class="logo">cocon<span>.</span></a>
+    <div class="code">404</div>
+    <h1>Cette page n'existe pas</h1>
+    <p>La page que vous cherchez a peut-être été déplacée, supprimée, ou n'a jamais existé.</p>
+    <a href="/" class="btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Retour à l'accueil
+    </a>
+    <div class="links">
+        <a href="/app">Accéder à l'app</a>
+        <a href="/mentions-legales">Mentions légales</a>
+    </div>
+</body>
+</html>

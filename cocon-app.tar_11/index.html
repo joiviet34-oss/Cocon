@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocon — Organisez votre déco, rénovation & aménagement en un seul endroit</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#C4704B">
+    <meta name="description" content="Le moodboard collaboratif pour organiser vos projets déco et rénovation. Budget en temps réel, inspiration par pièce, partage avec votre décorateur ou vos proches.">
+    <link rel="canonical" href="https://cocon-app.fr/">
+    <meta property="og:url" content="https://cocon-app.fr/">
+    <meta property="og:title" content="Cocon — Organisez votre déco, rénovation & aménagement">
+    <meta property="og:description" content="Le moodboard collaboratif pour organiser vos projets déco et rénovation. Budget en temps réel, inspiration par pièce, partage avec vos proches.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:site_name" content="Cocon">
+    <meta property="og:image" content="https://cocon-app.fr/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cocon — Votre déco, enfin organisée">
+    <meta name="twitter:description" content="Moodboards collaboratifs pour vos projets déco et rénovation.">
+    <meta name="twitter:image" content="https://cocon-app.fr/og-image.svg">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Cocon",
+        "url": "https://cocon-app.fr",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "description": "Moodboard collaboratif pour organiser vos projets déco et rénovation. Budget en temps réel, inspiration par pièce, collaboration instantanée.",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Cocon"
+        }
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #FAF7F2;
+            --warm-white: #FFF9F3;
+            --sand: #E8DDD3;
+            --clay: #C4A882;
+            --terracotta: #C4704B;
+            --deep-brown: #3D2B1F;
+            --charcoal: #1A1714;
+            --sage: #8B9E82;
+            --muted-sage: #B5C4AE;
+            --dusty-rose: #C9A9A6;
+            --font-display: 'DM Serif Display', Georgia, serif;
+            --font-body: 'Instrument Sans', -apple-system, sans-serif;
+            --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--cream);
+            color: var(--charcoal);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ═══════════════════════════════════════════
+           NOISE TEXTURE OVERLAY
+        ═══════════════════════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-size: 256px 256px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ═══════════════════════════════════════════
+           NAVIGATION
+        ═══════════════════════════════════════════ */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1.25rem 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.5s var(--ease-smooth);
+            backdrop-filter: blur(0px);
+        }
+
+        .nav.scrolled {
+            background: rgba(250, 247, 242, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(196, 168, 130, 0.15);
+            padding: 0.85rem 3rem;
+        }
+
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            color: var(--charcoal);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-logo span {
+            color: var(--terracotta);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--deep-brown);
+            text-decoration: none;
+            letter-spacing: 0.01em;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1.5px;
+            background: var(--terracotta);
+            transition: width 0.4s var(--ease-smooth);
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            background: var(--charcoal);
+            color: var(--cream);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 100px;
+            cursor: pointer;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+            transition: all 0.4s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--terracotta);
+            border-radius: inherit;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s var(--ease-smooth);
+        }
+
+        .btn-primary:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .btn-primary span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary svg {
+            position: relative;
+            z-index: 1;
+            transition: transform 0.4s var(--ease-smooth);
+        }
+
+        .btn-primary:hover svg { transform: translateX(3px); }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            background: transparent;
+            color: var(--charcoal);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: 1.5px solid var(--sand);
+            border-radius: 100px;
+            cursor: pointer;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+            transition: all 0.4s var(--ease-smooth);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--terracotta);
+            color: var(--terracotta);
+        }
+
+        /* ═══════════════════════════════════════════
+           HERO SECTION
+        ═══════════════════════════════════════════ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 8rem 3rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .hero-bg-shape.one {
+            width: 600px;
+            height: 600px;
+            background: var(--dusty-rose);
+            top: -10%;
+            right: -5%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .hero-bg-shape.two {
+            width: 500px;
+            height: 500px;
+            background: var(--muted-sage);
+            bottom: -15%;
+            left: -10%;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+
+        .hero-bg-shape.three {
+            width: 300px;
+            height: 300px;
+            background: var(--clay);
+            top: 40%;
+            left: 50%;
+            opacity: 0.15;
+            animation: float 18s ease-in-out infinite 5s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 15px) scale(0.95); }
+        }
+
+        .hero-content {
+            max-width: 900px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1.1rem;
+            background: rgba(196, 112, 75, 0.08);
+            border: 1px solid rgba(196, 112, 75, 0.2);
+            border-radius: 100px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--terracotta);
+            margin-bottom: 2rem;
+            letter-spacing: 0.03em;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.8s var(--ease-smooth) 0.2s forwards;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--terracotta);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 6.5vw, 5.5rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: var(--charcoal);
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.9s var(--ease-smooth) 0.35s forwards;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--terracotta);
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: var(--deep-brown);
+            max-width: 580px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.9s var(--ease-smooth) 0.5s forwards;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.9s var(--ease-smooth) 0.65s forwards;
+        }
+
+        .hero-social-proof {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 3.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.9s var(--ease-smooth) 0.85s forwards;
+        }
+
+        .avatar-stack {
+            display: flex;
+        }
+
+        .avatar-stack .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2.5px solid var(--cream);
+            margin-left: -10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .avatar-stack .avatar:first-child { margin-left: 0; }
+        .avatar-stack .avatar:nth-child(1) { background: var(--terracotta); }
+        .avatar-stack .avatar:nth-child(2) { background: var(--sage); }
+        .avatar-stack .avatar:nth-child(3) { background: var(--clay); }
+        .avatar-stack .avatar:nth-child(4) { background: var(--dusty-rose); }
+
+        .hero-social-proof p {
+            font-size: 0.85rem;
+            color: var(--deep-brown);
+            opacity: 0.7;
+        }
+
+        .hero-social-proof strong {
+            color: var(--charcoal);
+            font-weight: 600;
+        }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Hero visual (mockup) */
+        .hero-visual {
+            position: absolute;
+            right: -2%;
+            top: 52%;
+            transform: translateY(-50%);
+            width: 48%;
+            max-width: 680px;
+            opacity: 0;
+            animation: fadeIn 1.2s var(--ease-smooth) 0.6s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .mockup-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            box-shadow:
+                0 4px 6px rgba(26, 23, 20, 0.02),
+                0 12px 24px rgba(26, 23, 20, 0.04),
+                0 32px 64px rgba(26, 23, 20, 0.06),
+                0 0 0 1px rgba(26, 23, 20, 0.04);
+            transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
+            transition: transform 0.6s var(--ease-smooth);
+        }
+
+        .mockup-container:hover {
+            transform: perspective(1200px) rotateY(-2deg) rotateX(1deg);
+        }
+
+        .mockup-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 16px;
+            background: #FAFAFA;
+            border-bottom: 1px solid #F0EDE8;
+        }
+
+        .mockup-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .mockup-dot.red { background: #FF6058; }
+        .mockup-dot.yellow { background: #FFBE30; }
+        .mockup-dot.green { background: #2AC840; }
+
+        .mockup-toolbar-url {
+            flex: 1;
+            margin-left: 12px;
+            padding: 5px 14px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            color: #999;
+            border: 1px solid #EEEBE6;
+        }
+
+        .mockup-body {
+            padding: 0;
+        }
+
+        .mockup-ui {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            min-height: 350px;
+        }
+
+        .mockup-sidebar {
+            background: #F8F5F0;
+            padding: 16px;
+            border-right: 1px solid #F0EDE8;
+        }
+
+        .mockup-sidebar-title {
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            color: var(--charcoal);
+            margin-bottom: 4px;
+        }
+
+        .mockup-sidebar-sub {
+            font-size: 0.62rem;
+            color: #999;
+            margin-bottom: 16px;
+        }
+
+        .mockup-room {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            color: var(--deep-brown);
+            margin-bottom: 3px;
+            cursor: default;
+            transition: background 0.2s;
+        }
+
+        .mockup-room.active {
+            background: white;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .mockup-room-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+        }
+
+        .mockup-main {
+            padding: 16px 20px;
+            background: white;
+        }
+
+        .mockup-main-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .mockup-main-title {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+        }
+
+        .mockup-budget {
+            font-size: 0.68rem;
+            padding: 4px 10px;
+            background: rgba(139, 158, 130, 0.12);
+            color: var(--sage);
+            font-weight: 600;
+            border-radius: 100px;
+        }
+
+        .mockup-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mockup-card {
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #F0EDE8;
+            transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s;
+        }
+
+        .mockup-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+
+        .mockup-card-img {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .mockup-card-info {
+            padding: 8px 10px;
+        }
+
+        .mockup-card-name {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        .mockup-card-price {
+            font-size: 0.62rem;
+            color: var(--terracotta);
+            font-weight: 600;
+        }
+
+        .mockup-card-supplier {
+            font-size: 0.56rem;
+            color: #AAA;
+        }
+
+        /* ═══════════════════════════════════════════
+           LOGOS BAR
+        ═══════════════════════════════════════════ */
+        .logos-bar {
+            padding: 3rem 3rem;
+            text-align: center;
+            border-top: 1px solid rgba(196, 168, 130, 0.15);
+            border-bottom: 1px solid rgba(196, 168, 130, 0.15);
+        }
+
+        .logos-bar p {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--clay);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 1.5rem;
+        }
+
+        .logos-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3.5rem;
+            flex-wrap: wrap;
+            opacity: 0.4;
+        }
+
+        .logo-item {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            color: var(--deep-brown);
+            letter-spacing: -0.01em;
+        }
+
+        /* ═══════════════════════════════════════════
+           FOR WHO SECTION
+        ═══════════════════════════════════════════ */
+        .for-who {
+            padding: 7rem 3rem;
+            background: var(--warm-white);
+        }
+
+        .for-who-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .for-who-card {
+            padding: 2rem 1.8rem;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid rgba(196, 168, 130, 0.1);
+            text-align: center;
+            transition: all 0.5s var(--ease-smooth);
+        }
+
+        .for-who-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(26, 23, 20, 0.06);
+        }
+
+        .for-who-emoji {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .for-who-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--charcoal);
+            margin-bottom: 0.6rem;
+        }
+
+        .for-who-card p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: var(--deep-brown);
+            opacity: 0.7;
+        }
+
+        /* ═══════════════════════════════════════════
+           FEATURES SECTION
+        ═══════════════════════════════════════════ */
+        .features {
+            padding: 7rem 3rem;
+        }
+
+        .section-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--terracotta);
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            color: var(--charcoal);
+            max-width: 650px;
+            margin-bottom: 1.2rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--deep-brown);
+            opacity: 0.7;
+            max-width: 550px;
+            margin-bottom: 4rem;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid rgba(196, 168, 130, 0.12);
+            transition: all 0.5s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--terracotta), var(--clay));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s var(--ease-smooth);
+        }
+
+        .feature-card:hover::before { transform: scaleX(1); }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(26, 23, 20, 0.06);
+        }
+
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: var(--charcoal);
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            line-height: 1.65;
+            color: var(--deep-brown);
+            opacity: 0.75;
+        }
+
+        /* ═══════════════════════════════════════════
+           HOW IT WORKS
+        ═══════════════════════════════════════════ */
+        .how-it-works {
+            padding: 7rem 3rem;
+            background: var(--charcoal);
+            color: var(--cream);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .how-it-works .section-label { color: var(--clay); }
+        .how-it-works .section-title { color: var(--cream); }
+        .how-it-works .section-subtitle { color: rgba(250, 247, 242, 0.6); }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 12%;
+            right: 12%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--clay), var(--clay), transparent);
+            opacity: 0.3;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(196, 168, 130, 0.12);
+            border: 1.5px solid var(--clay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--clay);
+            margin: 0 auto 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step h3 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            margin-bottom: 0.6rem;
+            color: var(--cream);
+        }
+
+        .step p {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: rgba(250, 247, 242, 0.55);
+        }
+
+        /* ═══════════════════════════════════════════
+           PRICING SECTION
+        ═══════════════════════════════════════════ */
+        .pricing {
+            padding: 7rem 3rem;
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .pricing-header .section-title {
+            max-width: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-header .section-subtitle {
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-toggle span {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--deep-brown);
+        }
+
+        .pricing-toggle span.active {
+            color: var(--charcoal);
+            font-weight: 700;
+        }
+
+        .toggle-switch {
+            width: 48px;
+            height: 26px;
+            background: var(--sand);
+            border-radius: 100px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active { background: var(--terracotta); }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s var(--ease-smooth);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(22px);
+        }
+
+        .pricing-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--sage);
+            background: rgba(139, 158, 130, 0.1);
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            background: white;
+            border: 1.5px solid rgba(196, 168, 130, 0.12);
+            position: relative;
+            transition: all 0.5s var(--ease-smooth);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--terracotta);
+            box-shadow: 0 8px 40px rgba(196, 112, 75, 0.12);
+        }
+
+        .pricing-card.featured::before {
+            content: 'Populaire';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 16px;
+            background: var(--terracotta);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border-radius: 100px;
+            letter-spacing: 0.03em;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(26, 23, 20, 0.08);
+        }
+
+        .pricing-plan-name {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--charcoal);
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-plan-desc {
+            font-size: 0.82rem;
+            color: var(--deep-brown);
+            opacity: 0.6;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .pricing-price {
+            display: flex;
+            align-items: baseline;
+            gap: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .pricing-price .amount {
+            font-family: var(--font-display);
+            font-size: 2.8rem;
+            color: var(--charcoal);
+            letter-spacing: -0.03em;
+        }
+
+        .pricing-price .currency {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--deep-brown);
+        }
+
+        .pricing-price .period {
+            font-size: 0.82rem;
+            color: var(--deep-brown);
+            opacity: 0.5;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 1.5rem 0 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(196, 168, 130, 0.12);
+        }
+
+        .pricing-features li {
+            font-size: 0.85rem;
+            color: var(--deep-brown);
+            padding: 0.45rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--sage);
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .pricing-card .btn-primary,
+        .pricing-card .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* ═══════════════════════════════════════════
+           TESTIMONIALS
+        ═══════════════════════════════════════════ */
+        .testimonials {
+            padding: 7rem 3rem;
+            background: var(--warm-white);
+            border-top: 1px solid rgba(196, 168, 130, 0.1);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+        }
+
+        .testimonial-card {
+            padding: 2.5rem;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid rgba(196, 168, 130, 0.1);
+        }
+
+        .testimonial-stars {
+            color: var(--terracotta);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 1.2rem;
+        }
+
+        .testimonial-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--deep-brown);
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .testimonial-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .testimonial-name {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--charcoal);
+        }
+
+        .testimonial-role {
+            font-size: 0.78rem;
+            color: var(--deep-brown);
+            opacity: 0.5;
+        }
+
+        /* ═══════════════════════════════════════════
+           CTA SECTION
+        ═══════════════════════════════════════════ */
+        .cta {
+            padding: 7rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-bg {
+            position: absolute;
+            inset: 2rem;
+            background: var(--charcoal);
+            border-radius: 32px;
+            overflow: hidden;
+        }
+
+        .cta-bg::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: var(--terracotta);
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            top: -20%;
+            right: -10%;
+        }
+
+        .cta-bg::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: var(--sage);
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.1;
+            bottom: -20%;
+            left: -5%;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+            padding: 5rem 2rem;
+        }
+
+        .cta h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+            color: var(--cream);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.2rem;
+        }
+
+        .cta h2 em {
+            font-style: italic;
+            color: var(--clay);
+        }
+
+        .cta p {
+            font-size: 1.1rem;
+            color: rgba(250, 247, 242, 0.55);
+            margin-bottom: 2.5rem;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .cta .btn-primary {
+            background: var(--terracotta);
+            font-size: 1rem;
+            padding: 1rem 2.5rem;
+        }
+
+        .cta .btn-primary::before { background: var(--cream); }
+        .cta .btn-primary:hover { color: var(--charcoal); }
+
+        /* ═══════════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════════ */
+        .footer {
+            padding: 4rem 3rem 2rem;
+            border-top: 1px solid rgba(196, 168, 130, 0.12);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            max-width: 1200px;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand .nav-logo {
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            font-size: 0.88rem;
+            color: var(--deep-brown);
+            opacity: 0.6;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
+        .footer-col h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--charcoal);
+            margin-bottom: 1rem;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col li {
+            margin-bottom: 0.6rem;
+        }
+
+        .footer-col a {
+            font-size: 0.88rem;
+            color: var(--deep-brown);
+            opacity: 0.6;
+            text-decoration: none;
+            transition: opacity 0.3s, color 0.3s;
+        }
+
+        .footer-col a:hover {
+            opacity: 1;
+            color: var(--terracotta);
+        }
+
+        .footer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(196, 168, 130, 0.08);
+        }
+
+        .footer-bottom p {
+            font-size: 0.78rem;
+            color: var(--deep-brown);
+            opacity: 0.4;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-bottom-links a {
+            font-size: 0.78rem;
+            color: var(--deep-brown);
+            opacity: 0.4;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .footer-bottom-links a:hover { opacity: 0.8; }
+
+        /* ═══════════════════════════════════════════
+           SCROLL ANIMATIONS
+        ═══════════════════════════════════════════ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s var(--ease-smooth), transform 0.8s var(--ease-smooth);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+
+        /* ═══════════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .hero-visual {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                width: 100%;
+                max-width: 600px;
+                margin-top: 3rem;
+            }
+
+            .hero {
+                min-height: auto;
+                padding: 7rem 2rem 4rem;
+            }
+
+            .mockup-container {
+                transform: none;
+            }
+
+            .mockup-container:hover { transform: none; }
+
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .for-who-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: repeat(2, 1fr); }
+            .steps::before { display: none; }
+            .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+            .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .nav { padding: 1rem 1.5rem; }
+            .nav-links { display: none; }
+            .hero { padding: 6rem 1.5rem 3rem; }
+            .features, .how-it-works, .pricing, .testimonials, .cta { padding: 4rem 1.5rem; }
+            .features-grid,
+            .for-who-grid,
+            .pricing-grid,
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; gap: 2.5rem; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .hero-actions { flex-direction: column; align-items: flex-start; }
+            .mockup-ui { grid-template-columns: 1fr; }
+            .mockup-sidebar { display: none; }
+            .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+            .logos-row { gap: 2rem; }
+        }
+
+        /* ═══════════════════════════════════════════
+           MOBILE NAV HAMBURGER
+        ═══════════════════════════════════════════ */
+        .nav-hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .nav-hamburger span {
+            width: 22px;
+            height: 1.5px;
+            background: var(--charcoal);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .nav-hamburger { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ NAVIGATION ═══ -->
+    <nav class="nav" id="nav">
+        <a href="/" class="nav-logo">cocon<span>.</span></a>
+        <ul class="nav-links">
+            <li><a href="#for-who">Pour qui</a></li>
+            <li><a href="#features">Fonctionnalités</a></li>
+            <li><a href="#pricing">Tarifs</a></li>
+            <li><a href="/app" class="btn-secondary">Se connecter</a></li>
+            <li><a href="/app" class="btn-primary"><span>Essai gratuit</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></li>
+        </ul>
+        <div class="nav-hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="hero">
+        <div class="hero-bg-shape one"></div>
+        <div class="hero-bg-shape two"></div>
+        <div class="hero-bg-shape three"></div>
+
+        <div class="hero-content">
+            <div class="hero-badge">
+                <div class="hero-badge-dot"></div>
+                Beta ouverte — Accès gratuit
+            </div>
+            <h1>Votre déco, enfin<br><em>organisée</em></h1>
+            <p class="hero-subtitle">
+                Moodboards par pièce, budget en temps réel, inspiration centralisée.
+                Que vous refassiez votre salon ou rénoviez tout un appartement,
+                Cocon remplace vos tableaux Pinterest, fichiers Excel et conversations WhatsApp.
+            </p>
+            <div class="hero-actions">
+                <a href="/app" class="btn-primary">
+                    <span>Commencer gratuitement</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="#how-it-works" class="btn-secondary">Voir la démo</a>
+            </div>
+            <div class="hero-social-proof">
+                <div class="avatar-stack">
+                    <div class="avatar">SL</div>
+                    <div class="avatar">MA</div>
+                    <div class="avatar">CP</div>
+                    <div class="avatar">+</div>
+                </div>
+                <p><strong>127 personnes</strong> organisent déjà leur déco avec Cocon</p>
+            </div>
+        </div>
+
+        <!-- MOCKUP -->
+        <div class="hero-visual">
+            <div class="mockup-container">
+                <div class="mockup-toolbar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                    <div class="mockup-toolbar-url">app.cocon.design/projet/lourmel</div>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-ui">
+                        <div class="mockup-sidebar">
+                            <div class="mockup-sidebar-title">Appt. Lourmel</div>
+                            <div class="mockup-sidebar-sub">51 m² • Mid-century</div>
+                            <div class="mockup-room active">
+                                <div class="mockup-room-icon" style="background: rgba(196, 112, 75, 0.1)">🛋️</div>
+                                Salon
+                            </div>
+                            <div class="mockup-room">
+                                <div class="mockup-room-icon" style="background: rgba(139, 158, 130, 0.1)">🍳</div>
+                                Cuisine
+                            </div>
+                            <div class="mockup-room">
+                                <div class="mockup-room-icon" style="background: rgba(201, 169, 166, 0.1)">🛏️</div>
+                                Chambre
+                            </div>
+                            <div class="mockup-room">
+                                <div class="mockup-room-icon" style="background: rgba(196, 168, 130, 0.1)">🚿</div>
+                                SDB
+                            </div>
+                        </div>
+                        <div class="mockup-main">
+                            <div class="mockup-main-header">
+                                <div class="mockup-main-title">Salon — 31 m²</div>
+                                <div class="mockup-budget">Budget : 4 850 €</div>
+                            </div>
+                            <div class="mockup-grid">
+                                <div class="mockup-card">
+                                    <div class="mockup-card-img" style="background: #F5F0EB">🪑</div>
+                                    <div class="mockup-card-info">
+                                        <div class="mockup-card-name">Fauteuil Oslo</div>
+                                        <div class="mockup-card-price">890 €</div>
+                                        <div class="mockup-card-supplier">Maisons du Monde</div>
+                                    </div>
+                                </div>
+                                <div class="mockup-card">
+                                    <div class="mockup-card-img" style="background: #EBF0EC">🌿</div>
+                                    <div class="mockup-card-info">
+                                        <div class="mockup-card-name">Lampadaire Arc</div>
+                                        <div class="mockup-card-price">245 €</div>
+                                        <div class="mockup-card-supplier">La Redoute</div>
+                                    </div>
+                                </div>
+                                <div class="mockup-card">
+                                    <div class="mockup-card-img" style="background: #F0EBEB">🖼️</div>
+                                    <div class="mockup-card-info">
+                                        <div class="mockup-card-name">Tapis Berbère</div>
+                                        <div class="mockup-card-price">320 €</div>
+                                        <div class="mockup-card-supplier">AM.PM</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ LOGOS ═══ -->
+    <section class="logos-bar reveal">
+        <p>Compatible avec vos fournisseurs favoris</p>
+        <div class="logos-row">
+            <div class="logo-item">IKEA</div>
+            <div class="logo-item">Maisons du Monde</div>
+            <div class="logo-item">La Redoute</div>
+            <div class="logo-item">AM.PM</div>
+            <div class="logo-item">Habitat</div>
+            <div class="logo-item">Made.com</div>
+        </div>
+    </section>
+
+    <!-- ═══ FOR WHO ═══ -->
+    <section class="for-who" id="for-who">
+        <div class="section-label reveal" style="text-align:center">Pour qui ?</div>
+        <h2 class="section-title reveal" style="text-align:center; margin: 0 auto 1.2rem;">Pour tous ceux qui ont un projet <em>chez eux</em></h2>
+        <p class="section-subtitle reveal" style="text-align:center; margin: 0 auto 4rem;">Que vous refassiez un studio ou une maison entière, seul ou accompagné.</p>
+
+        <div class="for-who-grid">
+            <div class="for-who-card reveal reveal-delay-1">
+                <div class="for-who-emoji">🏠</div>
+                <h3>Particuliers</h3>
+                <p>Vous refaites votre appart ou votre maison ? Organisez vos envies, suivez votre budget, décidez à deux.</p>
+            </div>
+            <div class="for-who-card reveal reveal-delay-2">
+                <div class="for-who-emoji">💑</div>
+                <h3>Couples</h3>
+                <p>Plus besoin de 47 screenshots sur WhatsApp. Mettez-vous d'accord sur un board partagé, commentez, votez.</p>
+            </div>
+            <div class="for-who-card reveal reveal-delay-3">
+                <div class="for-who-emoji">🎨</div>
+                <h3>Décorateurs & architectes</h3>
+                <p>Présentez vos propositions de façon pro, recueillez les retours en direct, gardez le contrôle du budget.</p>
+            </div>
+            <div class="for-who-card reveal reveal-delay-4">
+                <div class="for-who-emoji">🔨</div>
+                <h3>Rénovateurs</h3>
+                <p>Gros travaux ? Centralisez les choix de matériaux, les devis artisans, et le planning — pièce par pièce.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section class="features" id="features">
+        <div class="section-label reveal">Fonctionnalités</div>
+        <h2 class="section-title reveal">Tout ce qu'il faut pour <em>concrétiser</em> votre projet</h2>
+        <p class="section-subtitle reveal">Fini les tableaux Pinterest sans suivi, les fichiers Excel incompréhensibles et les conversations WhatsApp perdues. Tout vit dans un seul espace, beau et clair.</p>
+
+        <div class="features-grid">
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon" style="background: rgba(196, 112, 75, 0.08)">🎨</div>
+                <h3>Moodboard par pièce</h3>
+                <p>Organisez vos idées pièce par pièce. Salon, cuisine, chambre — chaque espace a son univers visuel avec images, couleurs et produits.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon" style="background: rgba(139, 158, 130, 0.1)">👥</div>
+                <h3>Partagez avec qui vous voulez</h3>
+                <p>Envoyez un lien à votre conjoint, votre décorateur ou votre artisan. Tout le monde voit les changements en direct et peut commenter.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon" style="background: rgba(196, 168, 130, 0.1)">💰</div>
+                <h3>Budget en temps réel</h3>
+                <p>Chaque produit a son prix. Le budget se met à jour automatiquement, par pièce et au global. Vous savez exactement où vous en êtes.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon" style="background: rgba(201, 169, 166, 0.1)">🎯</div>
+                <h3>Extraction de couleurs</h3>
+                <p>Uploadez une photo d'inspiration et extrayez sa palette en un clic. Harmonisez vos choix de peinture, textiles et mobilier.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon" style="background: rgba(196, 112, 75, 0.08)">📋</div>
+                <h3>Shopping list & export</h3>
+                <p>Générez une liste d'achats complète avec liens, prix et fournisseurs. Exportez en PDF avant de filer chez IKEA.</p>
+            </div>
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon" style="background: rgba(139, 158, 130, 0.1)">📷</div>
+                <h3>Plans & photos intégrés</h3>
+                <p>Centralisez vos plans, photos avant-travaux, mesures et croquis. Tout le contexte de votre projet en un seul endroit.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ HOW IT WORKS ═══ -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-label reveal">Comment ça marche</div>
+        <h2 class="section-title reveal">De l'idée au premier<br>coup de pinceau</h2>
+        <p class="section-subtitle reveal">Quatre étapes pour des projets déco sereins, seul ou à plusieurs.</p>
+
+        <div class="steps">
+            <div class="step reveal reveal-delay-1">
+                <div class="step-number">1</div>
+                <h3>Créez votre projet</h3>
+                <p>Mon appart, la maison de campagne, la chambre de bébé… Renseignez vos pièces et c'est parti.</p>
+            </div>
+            <div class="step reveal reveal-delay-2">
+                <div class="step-number">2</div>
+                <h3>Ajoutez vos trouvailles</h3>
+                <p>Un canapé repéré sur La Redoute, une couleur vue sur Pinterest, une photo d'inspi. Tout se range par pièce, avec le prix.</p>
+            </div>
+            <div class="step reveal reveal-delay-3">
+                <div class="step-number">3</div>
+                <h3>Partagez & décidez ensemble</h3>
+                <p>Envoyez le lien à votre moitié, votre déco ou votre artisan. Tout le monde voit, commente, et vote.</p>
+            </div>
+            <div class="step reveal reveal-delay-4">
+                <div class="step-number">4</div>
+                <h3>Exportez & commandez</h3>
+                <p>Votre shopping list est prête, avec les liens directs vers les produits. Plus qu'à cliquer.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ PRICING ═══ -->
+    <section class="pricing" id="pricing">
+        <div class="pricing-header">
+            <div class="section-label reveal">Tarifs</div>
+            <h2 class="section-title reveal">Gratuit.<br><em>Tout simplement.</em></h2>
+            <p class="section-subtitle reveal">Pas d'abonnement, pas de limite cachée. Cocon est gratuit pour tout le monde.</p>
+        </div>
+
+        <div class="pricing-grid" style="max-width: 800px; margin: 0 auto; grid-template-columns: 1fr 1fr;">
+            <div class="pricing-card featured reveal reveal-delay-1" style="text-align:center">
+                <div class="pricing-plan-name">Cocon</div>
+                <div class="pricing-plan-desc">Toutes les fonctionnalités, pour tous</div>
+                <div class="pricing-price">
+                    <span class="amount">0</span>
+                    <span class="currency">€</span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--deep-brown); opacity: 0.5;">pour toujours</p>
+                <ul class="pricing-features">
+                    <li>Projets et pièces illimités</li>
+                    <li>Collaboration temps réel</li>
+                    <li>Budget et suivi des dépenses</li>
+                    <li>Moodboards visuels</li>
+                    <li>Post-its et notes par pièce</li>
+                    <li>Export PDF</li>
+                    <li>Extraction de couleurs</li>
+                    <li>Explorer 130+ marques déco</li>
+                </ul>
+                <a href="/app" class="btn-primary"><span>Commencer gratuitement</span></a>
+            </div>
+
+            <div class="pricing-card reveal reveal-delay-2" style="display:flex;flex-direction:column;justify-content:center;text-align:center;background:transparent;border-style:dashed;">
+                <div style="font-size:2.5rem;margin-bottom:1rem">💡</div>
+                <div class="pricing-plan-name" style="font-size:1rem">Comment ça marche ?</div>
+                <p style="font-size:0.85rem; color:var(--deep-brown); opacity:0.6; line-height:1.6; margin-top:0.8rem;">
+                    Cocon est financé par des liens vers les marques que vous découvrez dans l'Explorer. Si vous achetez via ces liens, on touche une petite commission — sans surcoût pour vous.
+                </p>
+                <p style="font-size:0.82rem; color:var(--terracotta); font-weight:600; margin-top:1rem;">
+                    Vous décorez, on se finance. Tout le monde y gagne.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ CTA ═══ -->
+    <section class="cta">
+        <div class="cta-bg"></div>
+        <div class="cta-content">
+            <h2 class="reveal">Prêt à organiser<br>votre prochain <em>cocon</em> ?</h2>
+            <p class="reveal">Gratuit, sans carte bancaire. Créez votre premier moodboard en moins de 2 minutes — seul, en couple ou avec votre déco.</p>
+            <a href="/app" class="btn-primary reveal">
+                <span>Commencer gratuitement</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="nav-logo">cocon<span>.</span></a>
+                <p>Le moodboard collaboratif pour organiser vos projets déco et rénovation. Pour les particuliers, les couples, les passionnés — et les pros. Fait avec soin à Paris 🇫🇷</p>
+            </div>
+            <div class="footer-col">
+                <h4>Produit</h4>
+                <ul>
+                    <li><a href="#features">Fonctionnalités</a></li>
+                    <li><a href="#pricing">Tarifs</a></li>
+                    <li><a href="/app">Accéder à l'app</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Légal</h4>
+                <ul>
+                    <li><a href="/mentions-legales">Mentions légales</a></li>
+                    <li><a href="/mentions-legales">Politique de confidentialité</a></li>
+                    <li><a href="/mentions-legales">CGU</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Cocon. Tous droits réservés.</p>
+            <div class="footer-bottom-links">
+                <a href="/mentions-legales">Mentions légales</a>
+                <a href="/mentions-legales">Confidentialité</a>
+            </div>
+        </div>
+    </footer>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // ═══ NAV SCROLL EFFECT ═══
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 40);
+        });
+
+        // ═══ SCROLL REVEAL ═══
+        const reveals = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        reveals.forEach(el => revealObserver.observe(el));
+
+        // ═══ PRICING TOGGLE ═══
+        let isYearly = false;
+        function togglePricing() {
+            isYearly = !isYearly;
+            const toggle = document.getElementById('pricing-toggle');
+            const monthlyLabel = document.getElementById('monthly-label');
+            const yearlyLabel = document.getElementById('yearly-label');
+
+            toggle.classList.toggle('active', isYearly);
+            monthlyLabel.classList.toggle('active', !isYearly);
+            yearlyLabel.classList.toggle('active', isYearly);
+
+            document.querySelectorAll('.price-monthly').forEach(el => {
+                el.style.display = isYearly ? 'none' : '';
+            });
+            document.querySelectorAll('.price-yearly').forEach(el => {
+                el.style.display = isYearly ? '' : 'none';
+            });
+        }
+
+        // ═══ SMOOTH SCROLL ═══
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+          

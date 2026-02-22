@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocon — App</title>
+    <meta name="description" content="Organisez votre déco avec Cocon : moodboards par pièce, budget en temps réel, collaboration instantanée.">
+    <link rel="canonical" href="https://cocon-app.fr/app">
+    <meta property="og:title" content="Cocon — Votre déco, enfin organisée">
+    <meta property="og:description" content="Moodboards collaboratifs pour vos projets déco et rénovation.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#C4704B">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+
+    <!-- html2pdf for export -->
+    <!-- html2pdf loaded on demand - see loadHtml2Pdf() in app.js -->
+
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="position:fixed;inset:0;background:#FAF7F2;display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity 0.4s">
+        <div style="text-align:center">
+            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:2rem;color:#1A1714;margin-bottom:0.5rem">cocon<span style="color:#C4704B">.</span></div>
+            <div style="width:120px;height:3px;background:#E8DDD3;border-radius:3px;overflow:hidden;margin:0 auto">
+                <div style="width:40%;height:100%;background:#C4704B;border-radius:3px;animation:loadBar 1.2s ease infinite"></div>
+            </div>
+        </div>
+    </div>
+    <style>@keyframes loadBar{0%{margin-left:-40%}100%{margin-left:100%}}</style>
+
+    <!-- ═══════════════════════════════════════════
+         AUTH SCREEN
+    ═══════════════════════════════════════════ -->
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <div class="auth-left">
+                <div class="auth-brand">
+                    <a href="/" class="logo">cocon<span>.</span></a>
+                    <p class="auth-tagline">Votre déco,<br>enfin <em>organisée</em></p>
+                </div>
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <span class="auth-feature-icon">🎨</span>
+                        <span>Moodboards par pièce</span>
+                    </div>
+                    <div class="auth-feature">
+                        <span class="auth-feature-icon">💰</span>
+                        <span>Budget en temps réel</span>
+                    </div>
+                    <div class="auth-feature">
+                        <span class="auth-feature-icon">👥</span>
+                        <span>Collaboration instantanée</span>
+                    </div>
+                </div>
+            </div>
+            <div class="auth-right">
+                <div class="auth-box">
+                    <h2 id="auth-title">Connexion</h2>
+                    <p id="auth-subtitle">Retrouvez vos projets déco</p>
+
+                    <button class="btn-google" onclick="loginWithGoogle()">
+                        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                        Continuer avec Google
+                    </button>
+
+                    <div class="auth-divider">
+                        <span>ou par email</span>
+                    </div>
+
+                    <form id="auth-form" onsubmit="handleEmailAuth(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="auth-email" placeholder="vous@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mot de passe</label>
+                            <input type="password" id="auth-password" placeholder="••••••••" required minlength="6">
+                        </div>
+                        <div id="auth-name-group" class="form-group" style="display:none">
+                            <label>Prénom</label>
+                            <input type="text" id="auth-name" placeholder="Votre prénom">
+                        </div>
+                        <button type="submit" class="btn-primary-full" id="auth-submit-btn">Se connecter</button>
+                        <p class="auth-forgot" id="auth-forgot"><a href="#" onclick="forgotPassword(event)">Mot de passe oublié ?</a></p>
+                    </form>
+
+                    <p class="auth-switch">
+                        <span id="auth-switch-text">Pas encore de compte ?</span>
+                        <a href="#" onclick="toggleAuthMode(event);" id="auth-switch-link">Créer un compte</a>
+                    </p>
+                    <p id="auth-error" class="auth-error"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD SCREEN
+    ═══════════════════════════════════════════ -->
+    <div id="dashboard-screen" class="screen" style="display:none">
+        <nav class="app-nav">
+            <a href="#" class="logo" onclick="showDashboard()">cocon<span>.</span></a>
+            <div class="app-nav-right">
+                <div class="user-menu" onclick="toggleUserMenu()">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <span id="user-name">User</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
+                    <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
+                    <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">
+                    <a href="#" onclick="logout()">Se déconnecter</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <div>
+                    <h1>Mes projets</h1>
+                    <p class="dashboard-subtitle" id="dashboard-subtitle">Vous avez 0 projet</p>
+                </div>
+                <button class="btn-primary-app" onclick="showNewProjectModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Nouveau projet
+                </button>
+            </div>
+
+            <div id="projects-grid" class="projects-grid">
+                <!-- Projects rendered by JS -->
+            </div>
+
+            <div id="empty-state" class="empty-state">
+                <div class="empty-state-icon">🏠</div>
+                <h3>Aucun projet pour l'instant</h3>
+                <p>Créez votre premier projet et commencez à organiser votre déco.</p>
+                <button class="btn-primary-app" onclick="showNewProjectModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Créer mon premier projet
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         PROJECT / MOODBOARD SCREEN
+    ═══════════════════════════════════════════ -->
+    <div id="project-screen" class="screen" style="display:none">
+        <nav class="app-nav">
+            <div class="app-nav-left">
+                <button class="btn-mobile-menu" onclick="toggleSidebar()" title="Menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <a href="#" class="logo" onclick="showDashboard()">cocon<span>.</span></a>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                <span class="breadcrumb-project" id="breadcrumb-project">Projet</span>
+            </div>
+            <div class="app-nav-right">
+                <button class="btn-icon" onclick="showShareModal()" title="Partager">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+                <button class="btn-icon" onclick="exportPDF()" title="Export PDF">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+                </button>
+                <button class="btn-icon" onclick="showComments()" title="Commentaires">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="comment-badge" id="comment-badge" style="display:none">0</span>
+                </button>
+                <div class="user-menu" onclick="toggleUserMenu()">
+                    <div class="user-avatar" id="user-avatar-2">U</div>
+                </div>
+                <div class="user-dropdown" id="user-dropdown-2">
+                    <a href="#" onclick="showDashboard()">Mes projets</a>
+                    <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
+                    <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
+                    <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">
+                    <a href="#" onclick="logout()">Se déconnecter</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="project-layout">
+            <!-- SIDEBAR -->
+            <aside class="project-sidebar" id="project-sidebar">
+                <div class="sidebar-header">
+                    <h2 id="project-name">Mon Projet</h2>
+                    <p id="project-meta">51 m² • Mid-century</p>
+                </div>
+
+                <div class="sidebar-budget" id="sidebar-budget">
+                    <div class="budget-label">Budget total</div>
+                    <div class="budget-amount" id="total-budget">0 €</div>
+                    <button class="btn-budget-dashboard" id="btn-budget-view" onclick="showBudgetDashboard()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                        Tableau de bord budget
+                    </button>
+                    <button class="btn-budget-dashboard" id="btn-explore-view" onclick="showExplorePage()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        Explorer les marques
+                    </button>
+                </div>
+
+                <div class="sidebar-rooms" id="sidebar-rooms">
+                    <!-- Rooms rendered by JS -->
+                </div>
+
+                <button class="btn-add-room" onclick="showAddRoomModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Ajouter une pièce
+                </button>
+
+                <div class="sidebar-palette" id="sidebar-palette">
+                    <div class="palette-label">Palette du projet</div>
+                    <div class="palette-colors" id="palette-colors">
+                        <!-- Colors rendered by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="project-main" id="project-main">
+                <!-- Shared View Banner (for guests) -->
+                <div class="shared-banner" id="shared-banner" style="display:none">
+                    <div class="collab-banner-content">
+                        <div class="collab-banner-icon">👀</div>
+                        <div class="collab-banner-text">
+                            <strong>Vous consultez un projet partagé</strong>
+                            <span>Vous pouvez voter sur les éléments et laisser des commentaires.</span>
+                        </div>
+                    </div>
+                    <div class="collab-banner-actions">
+                        <button class="collab-banner-btn" onclick="window.location.href='app.html'" style="background:var(--sage)">
+                            Créer mon projet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collab Banner (for owners) -->
+                <div class="collab-banner" id="collab-banner">
+                    <div class="collab-banner-content">
+                        <div class="collab-banner-icon">👥</div>
+                        <div class="collab-banner-text">
+                            <strong>Prêt à collaborer ?</strong>
+                            <span>Partagez ce projet avec votre conjoint, décorateur ou artisan pour décider ensemble.</span>
+                        </div>
+                    </div>
+                    <div class="collab-banner-actions">
+                        <button class="collab-banner-btn" onclick="showShareModal()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            Inviter quelqu'un
+                        </button>
+                        <button class="collab-banner-dismiss" onclick="dismissCollabBanner()" title="Masquer">&times;</button>
+                    </div>
+                </div>
+
+                <div class="room-header">
+                    <div>
+                        <h2 id="room-title">Salon</h2>
+                        <p id="room-meta">31 m² • 0 éléments • 0 €</p>
+                    </div>
+                    <div class="room-actions">
+                        <div class="view-toggle" id="view-toggle">
+                            <button class="view-btn active" data-view="grid" onclick="setViewMode('grid')" title="Grille">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                            </button>
+                            <button class="view-btn" data-view="moodboard" onclick="setViewMode('moodboard')" title="Moodboard visuel">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+                            </button>
+                        </div>
+                        <button class="btn-secondary-app" onclick="showInspirationModal()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                            Inspirations
+                        </button>
+                        <button class="btn-secondary-app" onclick="showColorExtractor()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                            Couleurs
+                        </button>
+                        <button class="btn-secondary-app" onclick="toggleDimensionsView()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 3H3v18h18V3z"/><path d="M3 9h18M9 3v18"/><path d="M3 15h6"/></svg>
+                            Dimensions
+                        </button>
+                        <button class="btn-primary-app" onclick="showAddItemModal()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                            Ajouter
+                        </button>
+                    </div>
+                </div>
+
+                <div class="items-grid" id="items-grid">
+                    <!-- Items rendered by JS -->
+                </div>
+
+                <!-- INSPIRATION TWO-COLUMN VIEW -->
+                <div class="inspo-split-view" id="inspiration-view" style="display:none">
+                    <div class="inspo-split-left">
+                        <div class="inspo-split-header">
+                            <h3>📸 Photos & Moodboard</h3>
+                            <button class="btn-primary-app btn-sm" onclick="showAddItemModal()">+ Ajouter</button>
+                        </div>
+                        <div class="inspo-split-grid" id="inspo-split-items">
+                            <!-- Inspiration items rendered by JS -->
+                        </div>
+                    </div>
+                    <div class="inspo-split-right">
+                        <div class="inspo-split-header">
+                            <h3>📝 Notes & idées</h3>
+                            <button class="btn-primary-app btn-sm" onclick="showAddPostit()">+ Note</button>
+                        </div>
+                        <div class="postits-board" id="postits-board">
+                            <!-- Post-its rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DIMENSIONS & PLANS VIEW -->
+                <div class="dimensions-view" id="dimensions-view" style="display:none">
+                    <div class="dimensions-split">
+                        <div class="dimensions-plans">
+                            <div class="inspo-split-header">
+                                <h3>📐 Plans de la pièce</h3>
+                                <label class="btn-primary-app btn-sm" style="cursor:pointer">
+                                    + Ajouter un plan
+                                    <input type="file" accept="image/*,.pdf" style="display:none" onchange="uploadPlan(event)">
+                                </label>
+                            </div>
+                            <div class="dimensions-plans-grid" id="dimensions-plans-grid">
+                                <!-- Plans rendered by JS -->
+                            </div>
+                        </div>
+                        <div class="dimensions-measures">
+                            <div class="inspo-split-header">
+                                <h3>📏 Mesures cotées</h3>
+                                <button class="btn-primary-app btn-sm" onclick="showAddMeasure()">+ Mesure</button>
+                            </div>
+                            <div class="dimensions-measures-list" id="dimensions-measures-list">
+                                <!-- Measures rendered by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="moodboard-view" id="moodboard-view" style="display:none">
+                    <!-- Moodboard visual rendered by JS -->
+                </div>
+
+                <!-- BUDGET DASHBOARD -->
+                <div class="budget-dashboard" id="budget-dashboard" style="display:none">
+                    <!-- Rendered by JS -->
+                </div>
+
+                <!-- EXPLORE PAGE -->
+                <div class="explore-page" id="explore-page" style="display:none">
+                    <!-- Rendered by JS -->
+                </div>
+
+                <div id="room-empty" class="room-empty">
+                    <div class="room-empty-icon">📦</div>
+                    <h3>Cette pièce est vide</h3>
+                    <p>Ajoutez votre premier élément : meuble, déco, peinture, textile…</p>
+                    <button class="btn-primary-app" onclick="showAddItemModal()">Ajouter un élément</button>
+                    <div class="room-empty-collab">
+                        <span class="room-empty-collab-divider">ou</span>
+                        <button class="btn-collab-ghost" onclick="showShareModal()">
+                            👥 Invitez quelqu'un à collaborer
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         MODALS
+    ═══════════════════════════════════════════ -->
+
+    <!-- New Project Modal -->
+    <div class="modal-overlay" id="modal-new-project" onclick="closeModal(event, 'modal-new-project')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Nouveau projet</h3>
+                <button class="modal-close" onclick="closeModalById('modal-new-project')">&times;</button>
+            </div>
+            <form onsubmit="createProject(event)">
+                <div class="form-group">
+                    <label>Démarrer avec un modèle</label>
+                    <div class="template-chips" id="template-chips">
+                        <label class="chip template-chip" onclick="applyTemplate(null)"><input type="radio" name="template" value="" checked><span>🏠 Personnalisé</span></label>
+                        <label class="chip template-chip" onclick="applyTemplate('studio')"><input type="radio" name="template" value="studio"><span>🏢 Studio 25m²</span></label>
+                        <label class="chip template-chip" onclick="applyTemplate('t2')"><input type="radio" name="template" value="t2"><span>🏠 T2 40m²</span></label>
+                        <label class="chip template-chip" onclick="applyTemplate('t3')"><input type="radio" name="template" value="t3"><span>👨‍👩‍👧 T3 famille 65m²</span></label>
+                        <label class="chip template-chip" onclick="applyTemplate('t4')"><input type="radio" name="template" value="t4"><span>🏡 T4+ maison 100m²</span></label>
+                        <label class="chip template-chip" onclick="applyTemplate('loft')"><input type="radio" name="template" value="loft"><span>🏗️ Loft open-space</span></label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Nom du projet *</label>
+                    <input type="text" id="project-input-name" placeholder="Mon appartement, Maison de campagne…" required maxlength="60">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Surface (m²)</label>
+                        <input type="number" id="project-input-surface" placeholder="51">
+                    </div>
+                    <div class="form-group">
+                        <label>Style</label>
+                        <select id="project-input-style">
+                            <option value="">Choisir…</option>
+                            <option>Mid-century modern</option>
+                            <option>Scandinave</option>
+                            <option>Japandi</option>
+                            <option>Industriel</option>
+                            <option>Bohème</option>
+                            <option>Contemporain</option>
+                            <option>Art déco</option>
+                            <option>Minimaliste</option>
+                            <option>Campagne chic</option>
+                            <option>Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Pièces de départ</label>
+                    <p class="form-hint">Vous pourrez en ajouter d'autres plus tard</p>
+                    <div class="room-chips" id="room-chips">
+                        <label class="chip"><input type="checkbox" value="Salon" checked><span>🛋️ Salon</span></label>
+                        <label class="chip"><input type="checkbox" value="Cuisine" checked><span>🍳 Cuisine</span></label>
+                        <label class="chip"><input type="checkbox" value="Chambre" checked><span>🛏️ Chambre</span></label>
+                        <label class="chip"><input type="checkbox" value="Salle de bain"><span>🚿 Salle de bain</span></label>
+                        <label class="chip"><input type="checkbox" value="Entrée"><span>🚪 Entrée</span></label>
+                        <label class="chip"><input type="checkbox" value="Bureau"><span>💻 Bureau</span></label>
+                        <label class="chip"><input type="checkbox" value="Chambre enfant"><span>🧸 Chambre enfant</span></label>
+                        <label class="chip"><input type="checkbox" value="Terrasse"><span>🌿 Terrasse</span></label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-new-project')">Annuler</button>
+                    <button type="submit" class="btn-primary-app">Créer le projet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Room Modal -->
+    <div class="modal-overlay" id="modal-add-room" onclick="closeModal(event, 'modal-add-room')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Ajouter une pièce</h3>
+                <button class="modal-close" onclick="closeModalById('modal-add-room')">&times;</button>
+            </div>
+            <form onsubmit="addRoom(event)">
+                <div class="form-group">
+                    <label>Nom de la pièce *</label>
+                    <input type="text" id="room-input-name" placeholder="Salon, Bureau, Chambre d'amis…" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Surface (m²)</label>
+                        <input type="number" id="room-input-surface" placeholder="12" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <select id="room-input-icon">
+                            <option value="🛋️">🛋️ Salon</option>
+                            <option value="🍳">🍳 Cuisine</option>
+                            <option value="🛏️">🛏️ Chambre</option>
+                            <option value="🚿">🚿 Salle de bain</option>
+                            <option value="🚪">🚪 Entrée</option>
+                            <option value="💻">💻 Bureau</option>
+                            <option value="🧸">🧸 Enfant</option>
+                            <option value="🌿">🌿 Terrasse</option>
+                            <option value="🏠">🏠 Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-add-room')">Annuler</button>
+                    <button type="submit" class="btn-primary-app">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div class="modal-overlay" id="modal-add-item" onclick="closeModal(event, 'modal-add-item')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="item-modal-title">Ajouter un élément</h3>
+                <button class="modal-close" onclick="closeModalById('modal-add-item')">&times;</button>
+            </div>
+            <form onsubmit="saveItem(event)">
+                <input type="hidden" id="item-edit-id" value="">
+
+                <div class="form-group">
+                    <label>Image</label>
+                    <div class="image-drop-zone" id="item-drop-zone" onclick="document.getElementById('item-file-input').click()">
+                        <input type="file" id="item-file-input" accept="image/*" style="display:none" onchange="handleItemImageSelect(event)">
+                        <div id="item-image-preview" class="image-preview">
+                            <span style="font-size:1.8rem">📷</span>
+                            <span>Glissez une image ici ou cliquez pour importer</span>
+                            <span style="font-size:0.72rem; opacity:0.5">JPG, PNG, WebP — 5 MB max</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="item-image-file-data" value="">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:2">
+                        <label>Nom *</label>
+                        <input type="text" id="item-input-name" placeholder="Canapé, Lampe, Peinture…" required maxlength="100">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label>Catégorie</label>
+                        <select id="item-input-category" onchange="updateSubcategoryOptions()">
+                            <option value="">—</option>
+                            <option>Mobilier</option>
+                            <option>Luminaire</option>
+                            <option>Textile</option>
+                            <option>Décoration</option>
+                            <option>Peinture</option>
+                            <option>Revêtement sol</option>
+                            <option>Revêtement mur</option>
+                            <option>Électroménager</option>
+                            <option>Rangement</option>
+                            <option>Plomberie</option>
+                            <option>Menuiserie</option>
+                            <option>Inspiration</option>
+                            <option>Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" id="subcategory-row" style="display:none">
+                    <div class="form-group" style="flex:1">
+                        <label>Sous-catégorie</label>
+                        <select id="item-input-subcategory">
+                            <option value="">—</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fournisseur</label>
+                        <input type="text" id="item-input-supplier" placeholder="IKEA, Maisons du Monde…" maxlength="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Référence</label>
+                        <input type="text" id="item-input-ref" placeholder="Réf. produit">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>🔗 Lien <span class="smart-link-hint" id="smart-link-hint"></span></label>
+                    <input type="url" id="item-input-link" placeholder="https://www.ikea.com/… — collez un lien, on pré-remplit !" oninput="handleSmartLink(this.value)">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prix unitaire (€)</label>
+                        <input type="number" id="item-input-price" placeholder="0" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantité</label>
+                        <input type="number" id="item-input-qty" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Dimensions</label>
+                        <input type="text" id="item-input-dimensions" placeholder="L×l×H cm">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1">
+                        <label>Statut</label>
+                        <select id="item-input-status">
+                            <option value="planned">📋 À acheter</option>
+                            <option value="ordered">📦 Commandé</option>
+                            <option value="delivered">🚚 Livré</option>
+                            <option value="installed">✅ Installé</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label>Payé par</label>
+                        <select id="item-input-paid-by">
+                            <option value="">— Non défini</option>
+                            <option value="commun">Commun</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="item-input-notes" rows="2" placeholder="Notes, alternatives, précisions…" maxlength="500"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-add-item')">Annuler</button>
+                    <button type="submit" class="btn-primary-app" id="item-submit-btn">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="modal-share" onclick="closeModal(event, 'modal-share')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Partager ce projet</h3>
+                <button class="modal-close" onclick="closeModalById('modal-share')">&times;</button>
+            </div>
+            <div class="share-section">
+                <h4>👥 Collaborer (compte requis)</h4>
+                <p class="share-description">Votre collaborateur pourra modifier, voter et commenter.</p>
+                <div class="share-link-box">
+                    <input type="text" id="share-link" readonly>
+                    <button class="btn-copy" onclick="copyShareLink()">Copier</button>
+                </div>
+                <p id="share-copied" class="share-copied" style="display:none">✓ Lien copié !</p>
+            </div>
+            <div class="share-section" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--cream)">
+                <h4>👁️ Lien public (lecture seule)</h4>
+                <p class="share-description">Pour artisans, famille… Aucun compte requis. Vue simplifiée, pas de modification possible.</p>
+                <div class="share-link-box">
+                    <input type="text" id="share-link-public" readonly>
+                    <button class="btn-copy" onclick="copyPublicLink()">Copier</button>
+                </div>
+                <p id="share-public-copied" class="share-copied" style="display:none">✓ Lien copié !</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Color Extractor Modal -->
+    <div class="modal-overlay" id="modal-colors" onclick="closeModal(event, 'modal-colors')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🎨 Extraire les couleurs</h3>
+                <button class="modal-close" onclick="closeModalById('modal-colors')">&times;</button>
+            </div>
+            <div class="form-group">
+                <div class="image-upload" onclick="document.getElementById('color-image-input').click()">
+                    <input type="file" id="color-image-input" accept="image/*" onchange="extractColors(event)" style="display:none">
+                    <div id="color-image-preview" class="image-preview">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#CCC" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>Uploadez une image d'inspiration</span>
+                    </div>
+                </div>
+            </div>
+            <div id="extracted-colors" class="extracted-colors" style="display:none">
+                <p class="form-hint">Cliquez sur les couleurs à ajouter à votre palette :</p>
+                <div id="color-swatches" class="color-swatches"></div>
+            </div>
+            <canvas id="color-canvas" style="display:none"></canvas>
+        </div>
+    </div>
+
+    <!-- Comments Panel -->
+    <div class="comments-panel" id="comments-panel">
+        <div class="comments-header">
+            <h3>💬 Commentaires</h3>
+            <button class="modal-close" onclick="hideComments()">&times;</button>
+        </div>
+        <div class="comments-list" id="comments-list">
+            <!-- Comments rendered by JS -->
+        </div>
+        <form class="comment-form" onsubmit="addComment(event)">
+            <input type="text" id="comment-input" placeholder="Ajouter un commentaire…" required>
+            <button type="submit" class="btn-send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- AI Inspiration Modal -->
+    <div class="modal-overlay" id="modal-inspiration" onclick="closeModal(event, 'modal-inspiration')">
+        <div class="modal modal-wide" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>✨ Suggestions d'inspiration</h3>
+                <button class="modal-close" onclick="closeModalById('modal-inspiration')">&times;</button>
+            </div>
+            <p class="inspo-subtitle">Des idées adaptées à votre pièce et votre style</p>
+            <div class="inspo-query-row">
+                <input type="text" id="inspo-query" placeholder="Ex: canapé mid-century, lampe design scandinave…" class="inspo-input">
+                <button class="btn-primary-app" id="inspo-search-btn" onclick="searchInspirations()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Chercher
+                </button>
+            </div>
+            <div class="inspo-tags" id="inspo-tags"></div>
+            <div class="inspo-results" id="inspo-results">
+                <div class="inspo-empty">
+                    <span style="font-size:2.5rem">💡</span>
+                    <p>Cliquez sur un tag ou tapez une recherche pour obtenir des suggestions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Measure Modal -->
+    <div class="modal-overlay" id="modal-measure" onclick="closeModal(event, 'modal-measure')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="measure-modal-title">📏 Nouvelle mesure</h3>
+                <button class="modal-close" onclick="closeModalById('modal-measure')">&times;</button>
+            </div>
+            <form onsubmit="saveMeasure(event)">
+                <input type="hidden" id="measure-edit-id" value="">
+                <div class="form-group">
+                    <label>Nom / Emplacement</label>
+                    <input type="text" id="measure-label" placeholder="Ex: Mur gauche, Fenêtre, Sous-pente…" required maxlength="80">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Longueur (cm)</label>
+                        <input type="number" id="measure-length" placeholder="0" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Largeur (cm)</label>
+                        <input type="number" id="measure-width" placeholder="0" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Hauteur (cm)</label>
+                        <input type="number" id="measure-height" placeholder="0" step="0.1" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input type="text" id="measure-notes" placeholder="Ex: sous la poutre, hors plinthes…" maxlength="120">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-measure')">Annuler</button>
+                    <button type="submit" class="btn-primary-app" id="measure-submit-btn">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Post-it Modal -->
+    <div class="modal-overlay" id="modal-postit" onclick="closeModal(event, 'modal-postit')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="postit-modal-title">📝 Nouvelle note</h3>
+                <button class="modal-close" onclick="closeModalById('modal-postit')">&times;</button>
+            </div>
+            <form onsubmit="savePostit(event)">
+                <input type="hidden" id="postit-edit-id" value="">
+                <div class="form-group">
+                    <label>Titre</label>
+                    <input type="text" id="postit-title" placeholder="Ex: Idée couleur mur…" maxlength="60" required>
+                </div>
+                <div class="form-group">
+                    <label>Contenu</label>
+                    <textarea id="postit-content" rows="4" placeholder="Notes, liens, idées…" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Couleur</label>
+                    <div class="postit-color-picker" id="postit-color-picker">
+                        <button type="button" class="postit-color-btn active" data-color="#FFF8E7" style="background:#FFF8E7" onclick="selectPostitColor(this)"></button>
+                        <button type="button" class="postit-color-btn" data-color="#FFE8D6" style="background:#FFE8D6" onclick="selectPostitColor(this)"></button>
+                        <button type="button" class="postit-color-btn" data-color="#E8F0E8" style="background:#E8F0E8" onclick="selectPostitColor(this)"></button>
+                        <button type="button" class="postit-color-btn" data-color="#E4E1F0" style="background:#E4E1F0" onclick="selectPostitColor(this)"></button>
+                        <button type="button" class="postit-color-btn" data-color="#F0E4E4" style="background:#F0E4E4" onclick="selectPostitColor(this)"></button>
+                        <button type="button" class="postit-color-btn" data-color="#E0EEF0" style="background:#E0EEF0" onclick="selectPostitColor(this)"></button>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-postit')">Annuler</button>
+                    <button type="submit" class="btn-primary-app" id="postit-submit-btn">Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Item Lightbox (fullscreen like fancy-ganache) -->
+    <div class="lightbox" id="item-lightbox" onclick="closeLightbox(event)">
+        <button class="lightbox-close" onclick="closeLightboxForce()">&times;</button>
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <img src="" alt="" class="lightbox-image" id="lightbox-image">
+            <div class="lightbox-info" id="lightbox-info"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Delete Account Modal -->
+    <div class="modal-overlay" id="modal-delete-account" onclick="closeModal(event, 'modal-delete-account')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>⚠️ Supprimer mon compte</h3>
+                <button class="modal-close" onclick="closeModalById('modal-delete-account')">&times;</button>
+            </div>
+            <p style="color:var(--deep-brown);font-size:0.85rem;margin-bottom:1rem">Cette action est <strong>irréversible</strong>. Tous vos projets, items, plans, mesures et notes seront définitivement supprimés.</p>
+            <div class="form-group">
+                <label>Tapez <strong>SUPPRIMER</strong> pour confirmer</label>
+                <input type="text" id="delete-account-confirm" placeholder="SUPPRIMER" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary-app" onclick="closeModalById('modal-delete-account')">Annuler</button>
+                <button class="btn-danger" onclick="deleteAccount()">Supprimer définitivement</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div class="modal-overlay" id="modal-feedback" onclick="closeModal(event, 'modal-feedback')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>💬 Votre avis compte</h3>
+                <button class="modal-close" onclick="closeModalById('modal-feedback')">&times;</button>
+            </div>
+            <form onsubmit="sendFeedback(event)">
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="feedback-type">
+                        <option value="bug">🐛 Bug</option>
+                        <option value="feature">✨ Idée de fonctionnalité</option>
+                        <option value="ux">🎨 Suggestion UX/design</option>
+                        <option value="other">💬 Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="feedback-message" rows="4" placeholder="Décrivez votre retour…" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-feedback')">Annuler</button>
+                    <button type="submit" class="btn-primary-app">Envoyer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Feedback FAB -->
+    <button class="feedback-fab" onclick="document.getElementById('modal-feedback').classList.add('active')" title="Donner un avis">💬</button>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>

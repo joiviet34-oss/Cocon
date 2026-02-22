@@ -1,0 +1,22 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#FAF7F2"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#C4704B"/>
+  <text x="100" y="260" font-family="Georgia, serif" font-size="72" fill="#1A1714">cocon<tspan fill="#C4704B">.</tspan></text>
+  <text x="100" y="340" font-family="Arial, sans-serif" font-size="32" fill="#3D3229" opacity="0.7">Votre déco, enfin organisée</text>
+  <text x="100" y="400" font-family="Arial, sans-serif" font-size="20" fill="#3D3229" opacity="0.4">Moodboards collaboratifs • Budget en temps réel • Inspiration par pièce</text>
+  <rect x="100" y="460" width="200" height="48" rx="8" fill="#C4704B"/>
+  <text x="140" y="490" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">Essayer gratuitement</text>
+  <text x="100" y="570" font-family="Arial, sans-serif" font-size="14" fill="#3D3229" opacity="0.3">cocon-app.fr</text>
+  <!-- Decorative elements -->
+  <rect x="800" y="120" width="300" height="200" rx="12" fill="#E8DDD3" opacity="0.6"/>
+  <rect x="830" y="150" width="240" height="30" rx="4" fill="#C4704B" opacity="0.2"/>
+  <rect x="830" y="190" width="180" height="16" rx="4" fill="#3D3229" opacity="0.1"/>
+  <rect x="830" y="216" width="120" height="16" rx="4" fill="#3D3229" opacity="0.08"/>
+  <rect x="830" y="260" width="80" height="40" rx="6" fill="#C4704B" opacity="0.15"/>
+  <rect x="920" y="260" width="80" height="40" rx="6" fill="#6BAF6B" opacity="0.15"/>
+  <rect x="800" y="350" width="300" height="160" rx="12" fill="#E8DDD3" opacity="0.4"/>
+  <rect x="830" y="380" width="240" height="24" rx="4" fill="#C4704B" opacity="0.15"/>
+  <rect x="830" y="414" width="200" height="14" rx="4" fill="#3D3229" opacity="0.08"/>
+  <rect x="830" y="438" width="160" height="14" rx="4" fill="#3D3229" opacity="0.06"/>
+  <circle cx="820" y="140" r="30" fill="#C4704B" opacity="0.1"/>
+</svg>
