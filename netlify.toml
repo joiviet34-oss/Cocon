@@ -1,0 +1,136 @@
+# Netlify configuration for Cocon
+
+# Redirects
+[[redirects]]
+  from = "/app"
+  to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/app/*"
+  to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/mentions-legales"
+  to = "/mentions-legales.html"
+  status = 200
+
+# Blog
+[[redirects]]
+  from = "/blog"
+  to = "/blog/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/organiser-renovation-appartement"
+  to = "/blog/organiser-renovation-appartement.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/moodboard-deco-gratuit"
+  to = "/blog/moodboard-deco-gratuit.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/choisir-couleurs-peinture-interieur"
+  to = "/blog/choisir-couleurs-peinture-interieur.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/budget-renovation-appartement"
+  to = "/blog/budget-renovation-appartement.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/amenager-petit-salon"
+  to = "/blog/amenager-petit-salon.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/checklist-decoration-premier-appartement"
+  to = "/blog/checklist-decoration-premier-appartement.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/generateur-palette-couleurs-deco"
+  to = "/blog/generateur-palette-couleurs-deco.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/tricount-renovation-deco"
+  to = "/blog/tricount-renovation-deco.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/quelle-couleur-pour-un-salon"
+  to = "/blog/quelle-couleur-pour-un-salon.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/idee-deco-chambre-adulte"
+  to = "/blog/idee-deco-chambre-adulte.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog/relooker-cuisine-sans-travaux"
+  to = "/blog/relooker-cuisine-sans-travaux.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "http://cocon-app.fr/*"
+  to = "https://cocon-app.fr/:splat"
+  status = 301
+  force = true
+
+# Global security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com https://*.firebaseio.com https://*.googleapis.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net wss://*.firebaseio.com https://*.google-analytics.com https://*.googletagmanager.com https://*.analytics.google.com; frame-src https://accounts.google.com https://*.firebaseapp.com;"
+
+# Cache CSS aggressively (fingerprinted by Netlify)
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Content-Type = "text/css; charset=utf-8"
+    Cache-Control = "public, max-age=604800"
+
+# Cache JS for 1 day (frequently updated)
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "public, max-age=86400"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sitemap.xml"
+  [headers.values]
+    Content-Type = "application/xml"
+
+[[headers]]
+  for = "/robots.txt"
+  [headers.values]
+    Content-Type = "text/plain"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=86400"

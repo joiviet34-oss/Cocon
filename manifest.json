@@ -1,0 +1,13 @@
+{
+  "name": "Cocon — Organisez vos projets déco",
+  "short_name": "Cocon",
+  "description": "Moodboards par pièce, budget en temps réel, collaboration instantanée.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#C4704B",
+  "orientation": "any",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }],
+  "categories": ["lifestyle", "productivity"],
+  "lang": "fr"
+}
