@@ -73,6 +73,11 @@
   status = 200
 
 [[redirects]]
+  from = "/blog/plan-de-travail-cuisine-types-materiaux"
+  to = "/blog/plan-de-travail-cuisine-types-materiaux.html"
+  status = 200
+
+[[redirects]]
   from = "/blog/relooker-cuisine-sans-travaux"
   to = "/blog/relooker-cuisine-sans-travaux.html"
   status = 200
