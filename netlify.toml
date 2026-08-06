@@ -78,6 +78,11 @@
   status = 200
 
 [[redirects]]
+  from = "/blog/choisir-type-bois-teintes-appartement"
+  to = "/blog/choisir-type-bois-teintes-appartement.html"
+  status = 200
+
+[[redirects]]
   from = "/blog/relooker-cuisine-sans-travaux"
   to = "/blog/relooker-cuisine-sans-travaux.html"
   status = 200
