@@ -20,7 +20,7 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fraunces:opsz,wght@9..144,300..900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -831,32 +831,38 @@
         </div>
     </div>
 
-    <!-- Feedback Modal -->
-    <div class="modal-overlay" id="modal-feedback" onclick="closeModal(event, 'modal-feedback')">
-        <div class="modal modal-sm" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3>💬 Votre avis compte</h3>
-                <button class="modal-close" aria-label="Fermer" onclick="closeModalById('modal-feedback')">&times;</button>
-            </div>
-            <form onsubmit="sendFeedback(event)">
-                <div class="form-group">
-                    <label>Type</label>
-                    <select id="feedback-type">
-                        <option value="bug">🐛 Bug</option>
-                        <option value="feature">✨ Idée de fonctionnalité</option>
-                        <option value="ux">🎨 Suggestion UX/design</option>
-                        <option value="other">💬 Autre</option>
-                    </select>
+    <!-- Feedback Panel -->
+    <div class="feedback-panel" id="feedback-panel" role="dialog" aria-label="Laisser un avis">
+        <div class="feedback-panel-header">
+            <h3>Une question, une idée ?</h3>
+            <button class="feedback-panel-close" onclick="closeFeedbackPanel()" aria-label="Fermer">&times;</button>
+        </div>
+        <div id="fb-panel-body" class="feedback-panel-body">
+            <form onsubmit="sendFeedback(event)" novalidate>
+                <div class="feedback-type-group">
+                    <label class="feedback-type-option">
+                        <input type="radio" name="fb-type" value="question" checked>
+                        <span>Question</span>
+                    </label>
+                    <label class="feedback-type-option">
+                        <input type="radio" name="fb-type" value="idee">
+                        <span>Idée</span>
+                    </label>
+                    <label class="feedback-type-option">
+                        <input type="radio" name="fb-type" value="probleme">
+                        <span>Problème</span>
+                    </label>
                 </div>
-                <div class="form-group">
-                    <label>Message</label>
-                    <textarea id="feedback-message" rows="4" placeholder="Décrivez votre retour…" required></textarea>
+                <textarea id="fb-message" class="feedback-panel-textarea" rows="4" placeholder="Votre message..." minlength="10" maxlength="2000" required oninput="document.getElementById('fb-char-count').textContent=this.value.length"></textarea>
+                <div class="feedback-char-row">
+                    <span class="feedback-error" id="fb-error"></span>
+                    <span class="feedback-char-count"><span id="fb-char-count">0</span>/2000</span>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary-app" onclick="closeModalById('modal-feedback')">Annuler</button>
-                    <button type="submit" class="btn-primary-app">Envoyer</button>
-                </div>
+                <button type="submit" class="feedback-submit" id="fb-submit-btn">Envoyer</button>
             </form>
+        </div>
+        <div id="fb-success" class="feedback-success-msg">
+            Merci, je vous réponds rapidement par email.
         </div>
     </div>
 
@@ -893,7 +899,10 @@
         </div>
     </div>
 
-    <button class="feedback-fab" aria-label="Donner un avis" onclick="document.getElementById('modal-feedback').classList.add('active')" title="Donner un avis">💬</button>
+    <button class="feedback-fab" id="feedback-fab" aria-label="Une question, une idée ?" onclick="toggleFeedbackPanel()" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Une question, une idée ?</span>
+    </button>
 
     <!-- Scripts -->
     <script src="js/firebase-config.js"></script>

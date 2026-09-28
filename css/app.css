@@ -541,9 +541,32 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--cha
 /* ─── SHARE SECTIONS ───────────────────────────────────────── */
 .share-section h4 { font-size: 0.85rem; font-weight: 600; color: var(--charcoal); margin-bottom: 0.3rem; }
 
-/* ─── FEEDBACK FAB ─────────────────────────────────────────── */
-.feedback-fab { position: fixed; bottom: 1.5rem; right: 1.5rem; width: 48px; height: 48px; border-radius: 50%; background: var(--charcoal); border: none; font-size: 1.2rem; cursor: pointer; box-shadow: var(--shadow-lg); z-index: 90; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; }
-.feedback-fab:hover { transform: scale(1.1); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+/* ─── FEEDBACK FAB & PANEL ──────────────────────────────────── */
+.feedback-fab { position: fixed; bottom: 1.5rem; right: 1.5rem; display: flex; align-items: center; gap: 0.45rem; background: #B8553A; color: #fff; border: none; border-radius: 999px; padding: 0.6rem 1rem 0.6rem 0.85rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.84rem; font-weight: 500; cursor: pointer; box-shadow: 0 4px 16px rgba(184,85,58,0.35); z-index: 90; transition: transform 0.2s, box-shadow 0.2s; white-space: nowrap; }
+.feedback-fab:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(184,85,58,0.45); }
+.feedback-fab svg { flex-shrink: 0; }
+.feedback-panel { position: fixed; bottom: 5.2rem; right: 1.5rem; width: 316px; max-width: calc(100vw - 2rem); background: #F4EFE6; border-radius: 14px; box-shadow: 0 8px 32px rgba(28,31,42,0.18); z-index: 91; display: none; flex-direction: column; overflow: hidden; }
+.feedback-panel.open { display: flex; }
+.feedback-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1rem 0.5rem; }
+.feedback-panel-header h3 { font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 600; color: #1C1F2A; margin: 0; }
+.feedback-panel-close { background: none; border: none; font-size: 1.3rem; line-height: 1; cursor: pointer; color: #1C1F2A; opacity: 0.4; padding: 0 0.2rem; transition: opacity 0.15s; }
+.feedback-panel-close:hover { opacity: 1; }
+.feedback-panel-body { padding: 0 1rem 1rem; }
+.feedback-type-group { display: flex; gap: 0.35rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.feedback-type-option { cursor: pointer; }
+.feedback-type-option input { display: none; }
+.feedback-type-option span { display: inline-block; padding: 0.32rem 0.75rem; border-radius: 999px; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8rem; font-weight: 500; background: rgba(28,31,42,0.08); color: #1C1F2A; border: 1.5px solid transparent; transition: all 0.15s; }
+.feedback-type-option input:checked + span { background: #B8553A; color: #fff; border-color: #B8553A; }
+.feedback-panel-textarea { width: 100%; box-sizing: border-box; min-height: 88px; border: 1.5px solid rgba(28,31,42,0.15); border-radius: 10px; padding: 0.6rem 0.75rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.83rem; color: #1C1F2A; background: #fff; resize: vertical; outline: none; transition: border-color 0.15s; }
+.feedback-panel-textarea:focus { border-color: #B8553A; }
+.feedback-char-row { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 0.35rem; min-height: 1.1rem; }
+.feedback-error { font-family: 'Inter', system-ui, sans-serif; font-size: 0.75rem; color: #c0392b; display: none; }
+.feedback-char-count { font-family: 'Inter', system-ui, sans-serif; font-size: 0.72rem; color: #1C1F2A; opacity: 0.35; margin-left: auto; }
+.feedback-submit { width: 100%; margin-top: 0.65rem; background: #B8553A; color: #fff; border: none; border-radius: 999px; padding: 0.62rem 1rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+.feedback-submit:hover:not(:disabled) { background: #9e4730; }
+.feedback-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.feedback-success-msg { padding: 1.8rem 1.2rem 2rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.88rem; color: #1C1F2A; text-align: center; display: none; line-height: 1.6; }
+@media (max-width: 480px) { .feedback-fab { right: 1rem; bottom: 1rem; font-size: 0.78rem; padding: 0.55rem 0.9rem 0.55rem 0.75rem; } .feedback-panel { right: 1rem; bottom: 4.8rem; width: calc(100vw - 2rem); } }
 
 /* ─── DELETE BUTTON ────────────────────────────────────────── */
 .btn-danger { background: #D94F4F; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }

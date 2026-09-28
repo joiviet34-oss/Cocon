@@ -3014,38 +3014,82 @@ async function exportAllData() {
     }
 }
 
-// ─── FEEDBACK ────────────────────────────────────────────────
+// ─── FEEDBACK PANEL ────────────────────────────────────────
+
+function getCurrentPage() {
+    if (document.getElementById('project-screen')?.style.display !== 'none') return 'projet';
+    if (document.getElementById('dashboard-screen')?.style.display !== 'none') return 'tableau-de-bord';
+    return 'app';
+}
+
+function toggleFeedbackPanel() {
+    const panel = document.getElementById('feedback-panel');
+    if (!panel) return;
+    panel.classList.contains('open') ? closeFeedbackPanel() : openFeedbackPanel();
+}
+
+function openFeedbackPanel() {
+    const panel = document.getElementById('feedback-panel');
+    if (!panel) return;
+    panel.classList.add('open');
+    setTimeout(() => { const ta = document.getElementById('fb-message'); if (ta) ta.focus(); }, 80);
+}
+
+function closeFeedbackPanel() {
+    const panel = document.getElementById('feedback-panel');
+    if (!panel) return;
+    panel.classList.remove('open');
+    const body = document.getElementById('fb-panel-body');
+    const success = document.getElementById('fb-success');
+    const errEl = document.getElementById('fb-error');
+    const ta = document.getElementById('fb-message');
+    const count = document.getElementById('fb-char-count');
+    const btn = document.getElementById('fb-submit-btn');
+    if (body) body.style.display = '';
+    if (success) success.style.display = 'none';
+    if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+    if (ta) ta.value = '';
+    if (count) count.textContent = '0';
+    if (btn) btn.disabled = false;
+    const firstType = document.querySelector('input[name="fb-type"]');
+    if (firstType) firstType.checked = true;
+}
 
 async function sendFeedback(e) {
     e.preventDefault();
-    const message = document.getElementById('feedback-message').value.trim();
-    if (!message) return;
-    const lastFb = parseInt(localStorage.getItem('cocon-last-feedback') || '0');
-    const fbCount = parseInt(localStorage.getItem('cocon-feedback-count') || '0');
-    const now = Date.now();
-    if (now - lastFb < 3600000 && fbCount >= 3) { toast('Merci ! Réessayez dans 1h.'); return; }
-    const btn = e.target.querySelector('[type="submit"]');
+    if (!currentUser) return;
+    const ta = document.getElementById('fb-message');
+    const message = ta ? ta.value.trim() : '';
+    const errEl = document.getElementById('fb-error');
+    if (message.length < 10) {
+        if (errEl) { errEl.textContent = 'Le message doit contenir au moins 10 caractères.'; errEl.style.display = 'block'; }
+        return;
+    }
+    const type = document.querySelector('input[name="fb-type"]:checked')?.value || 'question';
+    const btn = document.getElementById('fb-submit-btn');
+    if (errEl) errEl.style.display = 'none';
     if (btn) btn.disabled = true;
     try {
         await db.collection('feedback').add({
-            type: document.getElementById('feedback-type').value,
+            uid: currentUser.uid,
+            email: currentUser.email || '',
+            type,
             message,
-            userId: currentUser?.uid || 'anonymous',
-            userEmail: currentUser?.email || '',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            page: getCurrentPage(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'nouveau'
         });
-        closeModalById('modal-feedback');
-        document.getElementById('feedback-message').value = '';
-        toast('Merci pour votre retour ! 🙏');
-        localStorage.setItem('cocon-last-feedback', Date.now().toString());
-        localStorage.setItem('cocon-feedback-count', ((now - lastFb < 3600000 ? fbCount : 0) + 1).toString());
-    } catch (err) {
-        toast('Erreur — réessayez plus tard');
-    } finally {
+        const body = document.getElementById('fb-panel-body');
+        const success = document.getElementById('fb-success');
+        if (body) body.style.display = 'none';
+        if (success) success.style.display = 'block';
+        setTimeout(closeFeedbackPanel, 3000);
+    } catch (error) {
+        console.error('Feedback error:', error);
+        if (errEl) { errEl.textContent = 'Erreur lors de l\'envoi. Veuillez réessayer.'; errEl.style.display = 'block'; }
         if (btn) btn.disabled = false;
     }
 }
-
 // ─── ONBOARDING ──────────────────────────────────────────────
 
 function checkOnboarding() {

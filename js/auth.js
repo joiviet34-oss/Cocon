@@ -100,6 +100,8 @@ function toggleAuthMode(e) {
 // ─── Logout ───────────────────────────────────────────────────
 async function logout() {
     await auth.signOut();
+    const fab = document.getElementById('feedback-fab');
+    if (fab) { fab.style.display = 'none'; if (typeof closeFeedbackPanel === 'function') closeFeedbackPanel(); }
     showScreen('auth-screen');
 }
 
@@ -116,4 +118,6 @@ function updateUserUI(user) {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     document.querySelectorAll('[id^="user-avatar"]').forEach(el => el.textContent = initials);
     document.querySelectorAll('[id^="user-name"]').forEach(el => el.textContent = name);
+    const fab = document.getElementById('feedback-fab');
+    if (fab) fab.style.display = 'flex';
 }
