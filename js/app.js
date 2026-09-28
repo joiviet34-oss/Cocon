@@ -109,8 +109,6 @@ async function createProject(e) {
         });
     }
 
-    const shareId = generateShareId();
-
     try {
         const docRef = await db.collection('projects').add({
             name, surface, style,
@@ -119,9 +117,17 @@ async function createProject(e) {
             totalBudget: 0,
             ownerId: currentUser.uid,
             ownerName: currentUser.displayName || currentUser.email,
-            shareId,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Créer les jetons de partage (editor + viewer)
+        const ts = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('shares').doc(crypto.randomUUID()).set({
+            projectId: docRef.id, ownerId: currentUser.uid, role: 'editor', createdAt: ts
+        });
+        await db.collection('shares').doc(crypto.randomUUID()).set({
+            projectId: docRef.id, ownerId: currentUser.uid, role: 'viewer', createdAt: ts
         });
 
         closeModalById('modal-new-project');
@@ -143,11 +149,17 @@ async function deleteProject(id, name) {
     if (!confirm(`Supprimer "${name}" ? Cette action est irréversible.`)) return;
 
     try {
-        const items = await db.collection('projects').doc(id).collection('items').get();
-        const comments = await db.collection('projects').doc(id).collection('comments').get();
+        const [items, comments, members, shares] = await Promise.all([
+            db.collection('projects').doc(id).collection('items').get(),
+            db.collection('projects').doc(id).collection('comments').get(),
+            db.collection('projects').doc(id).collection('members').get(),
+            db.collection('shares').where('projectId', '==', id).get()
+        ]);
         const batch = db.batch();
         items.docs.forEach(doc => batch.delete(doc.ref));
         comments.docs.forEach(doc => batch.delete(doc.ref));
+        members.docs.forEach(doc => batch.delete(doc.ref));
+        shares.docs.forEach(doc => batch.delete(doc.ref));
         batch.delete(db.collection('projects').doc(id));
         await batch.commit();
         toast('Projet supprimé');
@@ -1270,12 +1282,26 @@ async function removeColor(hex) {
 
 // ─── SHARING ─────────────────────────────────────────────────
 
-function showShareModal() {
+async function showShareModal() {
     if (!currentProject) return;
     document.getElementById('modal-share').classList.add('active');
-    const url = `${window.location.origin}${window.location.pathname}?share=${currentProject.shareId}`;
-    document.getElementById('share-link').value = url;
+    document.getElementById('share-link').value = 'Chargement…';
+    document.getElementById('share-link-public').value = 'Chargement…';
     document.getElementById('share-copied').style.display = 'none';
+    try {
+        const snap = await db.collection('shares')
+            .where('ownerId', '==', currentUser.uid)
+            .where('projectId', '==', currentProject.id)
+            .get();
+        const base = `${window.location.origin}${window.location.pathname}`;
+        snap.docs.forEach(doc => {
+            if (doc.data().role === 'editor') document.getElementById('share-link').value = `${base}?share=${doc.id}`;
+            if (doc.data().role === 'viewer') document.getElementById('share-link-public').value = `${base}?view=${doc.id}`;
+        });
+    } catch (err) {
+        console.error('Share modal error:', err);
+        toast('Erreur lors du chargement des liens');
+    }
 }
 
 function copyShareLink() {
@@ -1286,14 +1312,12 @@ function copyShareLink() {
     setTimeout(() => { document.getElementById('share-copied').style.display = 'none'; }, 3000);
 }
 
-async function loadSharedProject(shareId) {
+async function loadSharedProject(token) {
     showScreen('project-screen');
-    
     try {
-        const snap = await db.collection('projects').where('shareId', '==', shareId).limit(1).get();
-        if (snap.empty) {
+        const shareDoc = await db.collection('shares').doc(token).get();
+        if (!shareDoc.exists) {
             toast('Projet introuvable ou lien expiré');
-            // Show a helpful message
             document.getElementById('project-main').innerHTML = `
                 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center;padding:2rem">
                     <div style="font-size:3rem;margin-bottom:1rem">🔗</div>
@@ -1303,8 +1327,15 @@ async function loadSharedProject(shareId) {
                 </div>`;
             return;
         }
-        
-        const projectId = snap.docs[0].id;
+        const { projectId, role } = shareDoc.data();
+        if (currentUser) {
+            const memberRef = db.collection('projects').doc(projectId)
+                .collection('members').doc(currentUser.uid);
+            const memberSnap = await memberRef.get();
+            if (!memberSnap.exists) {
+                await memberRef.set({ token, role, joinedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
+        }
         isSharedView = true;
         openProject(projectId);
     } catch (err) {
@@ -2805,9 +2836,6 @@ function formatPrice(n) {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 }
 
-function generateShareId() {
-    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-}
 
 // ─── PROJECT TEMPLATES ────────────────────────────────────────
 
@@ -2880,11 +2908,7 @@ function applyTemplate(key) {
 // ─── PUBLIC SHARE ────────────────────────────────────────────
 
 function shareProject() {
-    if (!currentProject) return;
-    const base = `${window.location.origin}${window.location.pathname}`;
-    document.getElementById('share-link').value = `${base}?share=${currentProject.shareId}`;
-    document.getElementById('share-link-public').value = `${base}?view=${currentProject.shareId}`;
-    document.getElementById('modal-share').classList.add('active');
+    showShareModal();
 }
 
 function copyPublicLink() {
@@ -2896,15 +2920,28 @@ function copyPublicLink() {
     setTimeout(() => el.style.display = 'none', 2000);
 }
 
-async function loadPublicView(shareId) {
+async function loadPublicView(token) {
     try {
-        const snap = await db.collection('projects').where('shareId', '==', shareId).limit(1).get();
-        if (snap.empty) {
+        const shareDoc = await db.collection('shares').doc(token).get();
+        if (!shareDoc.exists) {
             document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--cream);font-family:var(--font-body)"><div style="text-align:center;padding:2rem"><h1 style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem">Projet introuvable</h1><p style="color:var(--deep-brown);opacity:0.6">Ce lien de partage n'est plus valide.</p><a href="/" style="display:inline-block;margin-top:1rem;background:var(--terracotta);color:white;padding:0.6rem 1.4rem;border-radius:var(--radius-full);text-decoration:none">Découvrir Cocon</a></div></div>`;
             return;
         }
-        const doc = snap.docs[0];
-        const project = { id: doc.id, ...doc.data() };
+        const { projectId, role } = shareDoc.data();
+        if (currentUser) {
+            const memberRef = db.collection('projects').doc(projectId)
+                .collection('members').doc(currentUser.uid);
+            const memberSnap = await memberRef.get();
+            if (!memberSnap.exists) {
+                await memberRef.set({ token, role, joinedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
+        }
+        const projectDoc = await db.collection('projects').doc(projectId).get();
+        if (!projectDoc.exists) {
+            document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--cream);font-family:var(--font-body)"><div style="text-align:center;padding:2rem"><h1 style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem">Projet introuvable</h1><p style="color:var(--deep-brown);opacity:0.6">Ce lien de partage n'est plus valide.</p><a href="/" style="display:inline-block;margin-top:1rem;background:var(--terracotta);color:white;padding:0.6rem 1.4rem;border-radius:var(--radius-full);text-decoration:none">Découvrir Cocon</a></div></div>`;
+            return;
+        }
+        const project = { id: projectDoc.id, ...projectDoc.data() };
         const itemsSnap = await db.collection('projects').doc(project.id).collection('items').get();
         const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderPublicView(project, items);
@@ -2964,7 +3001,7 @@ async function deleteAccount() {
     try {
         const projectsSnap = await db.collection('projects').where('ownerId', '==', currentUser.uid).get();
         for (const projectDoc of projectsSnap.docs) {
-            for (const sub of ['items', 'comments', 'postits', 'measures', 'plans']) {
+            for (const sub of ['items', 'comments', 'postits', 'measures', 'plans', 'members']) {
                 const subSnap = await db.collection('projects').doc(projectDoc.id).collection(sub).get();
                 if (subSnap.docs.length > 0) {
                     const batch = db.batch();
@@ -2973,6 +3010,13 @@ async function deleteAccount() {
                 }
             }
             await db.collection('projects').doc(projectDoc.id).delete();
+        }
+        // Supprimer les jetons de partage de l'utilisateur
+        const sharesSnap = await db.collection('shares').where('ownerId', '==', currentUser.uid).get();
+        if (sharesSnap.docs.length > 0) {
+            const sharesBatch = db.batch();
+            sharesSnap.docs.forEach(d => sharesBatch.delete(d.ref));
+            await sharesBatch.commit();
         }
         try { await db.collection('users').doc(currentUser.uid).delete(); } catch (e) {}
         await currentUser.delete();

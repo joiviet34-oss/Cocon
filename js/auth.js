@@ -12,9 +12,15 @@ auth.onAuthStateChanged(user => {
     const shareId = params.get('share');
     const viewId = params.get('view');
 
-    // Public read-only view — no auth required
+    // Vue lecture seule — auth anonyme requise pour les règles Firestore
     if (viewId) {
-        if (typeof loadPublicView === 'function') loadPublicView(viewId);
+        if (user) {
+            if (typeof loadPublicView === 'function') loadPublicView(viewId);
+        } else {
+            auth.signInAnonymously().catch(err => {
+                console.error('Anonymous auth failed:', err);
+            });
+        }
         return;
     }
 

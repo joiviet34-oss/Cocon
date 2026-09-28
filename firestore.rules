@@ -1,9 +1,56 @@
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
+ function isAuth() { return request.auth != null; }
+ function projPath(pid) { return /databases/$(database)/documents/projects/$(pid); }
+ function memberPath(pid) { return /databases/$(database)/documents/projects/$(pid)/members/$(request.auth.uid); }
+ function isOwner(pid) { return isAuth() && get(projPath(pid)).data.ownerId == request.auth.uid; }
+ function isMember(pid) { return isAuth() && exists(memberPath(pid)); }
+ function canRead(pid) { return isOwner(pid) || isMember(pid); }
+ function canWrite(pid) { return isOwner(pid) || (isMember(pid) && get(memberPath(pid)).data.role == 'editor'); }
+
+ match /users/{userId} {
+ allow read, write: if isAuth() && request.auth.uid == userId;
+ }
+
+ match /shares/{token} {
+ allow get: if isAuth();
+ allow list: if isAuth() && resource.data.ownerId == request.auth.uid;
+ allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid
+ && get(projPath(request.resource.data.projectId)).data.ownerId == request.auth.uid;
+ allow delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+ allow update: if false;
+ }
+
+ match /projects/{pid} {
+ allow get: if isAuth() && (resource.data.ownerId == request.auth.uid || isMember(pid));
+ allow list: if isAuth() && resource.data.ownerId == request.auth.uid;
+ allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+ allow update: if canWrite(pid) && request.resource.data.ownerId == resource.data.ownerId;
+ allow delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+
+ match /members/{uid} {
+ allow read: if canRead(pid);
+ allow create: if isAuth() && request.auth.uid == uid
+ && get(/databases/$(database)/documents/shares/$(request.resource.data.token)).data.projectId == pid
+ && get(/databases/$(database)/documents/shares/$(request.resource.data.token)).data.role == request.resource.data.role;
+ allow delete: if isOwner(pid) || (isAuth() && request.auth.uid == uid);
+ allow update: if false;
+ }
+
+ match /{sub}/{docId} {
+ allow read: if sub in ['items','comments','plans','measures','postits','wishlist'] && canRead(pid);
+ allow write: if sub in ['items','comments','plans','measures','postits','wishlist'] && canWrite(pid);
+ }
+ }
+
  match /feedback/{docId} {
- allow create: if request.auth != null
- && request.resource.data.uid == request.auth.uid;
+ allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+ allow read, update, delete: if false;
+ }
+
+ match /affiliate_clicks/{docId} {
+ allow create: if true;
  allow read, update, delete: if false;
  }
  }

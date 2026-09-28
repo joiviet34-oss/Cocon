@@ -1,0 +1,12 @@
+{
+  "name": "cocon-scripts",
+  "private": true,
+  "description": "Scripts d'administration Cocon (Firebase Admin)",
+  "scripts": {
+    "migrate:dry": "node migrate-shares.js",
+    "migrate:apply": "node migrate-shares.js --apply"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

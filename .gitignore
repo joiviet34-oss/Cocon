@@ -1,2 +1,8 @@
 .DS_Store
 .netlify/
+# Clés de compte de service Firebase (ne jamais commiter)
+*service-account*.json
+*serviceAccount*.json
+*firebase-admin-key*.json
+*.credentials.json
+scripts/node_modules/
