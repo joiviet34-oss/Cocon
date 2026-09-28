@@ -74,7 +74,7 @@ function renderProjects() {
                 </button>
             </div>
             <h3 class="project-card-name">${escHtml(p.name)}</h3>
-            <p class="project-card-meta">${p.surface ? p.surface + ' m²' : ''}${p.surface && p.style ? ' • ' : ''}${p.style || ''}</p>
+            <p class="project-card-meta">${p.surface ? Number(p.surface) + ' m²' : ''}${p.surface && p.style ? ' • ' : ''}${escHtml(p.style || '')}</p>
             <div class="project-card-footer">
                 <span class="project-card-rooms">${(p.rooms || []).length} pièce${(p.rooms || []).length > 1 ? 's' : ''}</span>
                 <span class="project-card-budget">${formatPrice(p.totalBudget || 0)}</span>
@@ -627,7 +627,7 @@ function renderItems() {
              onclick='openLightbox(JSON.parse(this.dataset.item))' data-item="${itemJson}" style="cursor:pointer">
             <div class="item-card-img" style="background: ${item.imageUrl ? `url('${safeUrl(item.imageUrl)}') center/cover` : '#F5F0EB'}">
                 ${!item.imageUrl ? `<span style="font-size:2rem">${getCategoryEmoji(item.category)}</span>` : ''}
-                ${item.status && item.status !== 'planned' ? `<span class="item-badge item-status-${item.status}">${getStatusLabel(item.status)}</span>` : ''}
+                ${item.status && item.status !== 'planned' ? `<span class="item-badge item-status-${safeStatus(item.status)}">${getStatusLabel(safeStatus(item.status))}</span>` : ''}
                 ${item.link ? `<a href="${safeUrl(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-source-badge" data-brand="${escHtml(item.supplier || '')}" data-cat="${escHtml(item.category || '')}" onclick="trackAffClick(this.dataset.brand,this.dataset.cat);event.stopPropagation()" style="background:${getLinkSource(item.link).color}">${getLinkSource(item.link).icon}${getLinkSource(item.link).label}</a>` : ''}
                 ${isInspo ? '<span class="item-badge-inspo">✨</span>' : ''}
             </div>
@@ -639,7 +639,7 @@ function renderItems() {
                         <button class="btn-icon-xs" onclick="event.stopPropagation(); deleteItem('${item.id}')" title="Supprimer">🗑️</button>
                     </div>
                 </div>
-                ${!isInspo ? `<div class="item-card-price">${formatPrice((item.price || 0) * (item.qty || 1))}${item.qty > 1 ? ` <small>(${item.qty} × ${formatPrice(item.price)})</small>` : ''}</div>` : ''}
+                ${!isInspo ? `<div class="item-card-price">${formatPrice((item.price || 0) * (item.qty || 1))}${item.qty > 1 ? ` <small>(${Number(item.qty)} × ${formatPrice(item.price)})</small>` : ''}</div>` : ''}
                 ${item.supplier ? `<div class="item-card-supplier">${escHtml(item.supplier)}${item.subcategory ? ' · ' + escHtml(item.subcategory) : ''}</div>` : (item.subcategory ? `<div class="item-card-supplier">${escHtml(item.subcategory)}</div>` : '')}
                 ${item.link ? `<a href="${safeUrl(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-card-link" data-brand="${escHtml(item.supplier || '')}" data-cat="${escHtml(item.category || '')}" onclick="trackAffClick(this.dataset.brand,this.dataset.cat);event.stopPropagation()">🔗 Voir le produit</a>` : ''}
                 ${item.notes ? `<div class="item-card-notes">${escHtml(item.notes)}</div>` : ''}
@@ -722,7 +722,7 @@ function openLightbox(item) {
     if (linkBadge) html += `<div class="info-row"><span class="label">Lien</span>${linkBadge}</div>`;
     
     if (item.price) html += `<div class="info-row"><span class="label">Prix unitaire</span><span class="value">${formatPrice(item.price)}</span></div>`;
-    html += `<div class="info-row"><span class="label">Quantité</span><span class="value">${item.qty || 1}</span></div>`;
+    html += `<div class="info-row"><span class="label">Quantité</span><span class="value">${Number(item.qty) || 1}</span></div>`;
 
     html += `
         <div class="total-price">
@@ -950,7 +950,7 @@ function showInspirationModal() {
     
     const tagsEl = document.getElementById('inspo-tags');
     tagsEl.innerHTML = suggestionTags.map(t => 
-        `<button class="inspo-tag" onclick="document.getElementById('inspo-query').value='${escHtml(t)}'; searchInspirations()">${t}</button>`
+        `<button class="inspo-tag" data-tag="${escHtml(t)}" onclick="document.getElementById('inspo-query').value=this.dataset.tag; searchInspirations()">${escHtml(t)}</button>`
     ).join('');
 }
 
@@ -1250,8 +1250,8 @@ function extractDominantColors(ctx, w, h, count) {
 function displayExtractedColors(colors) {
     document.getElementById('extracted-colors').style.display = 'block';
     document.getElementById('color-swatches').innerHTML = colors.map(hex => `
-        <button class="color-swatch" style="background:${hex}" onclick="addColorToProject('${hex}')" title="${hex}">
-            <span class="color-swatch-hex">${hex}</span>
+        <button class="color-swatch" style="background:${hex}" data-hex="${hex}" onclick="addColorToProject(this.dataset.hex)" title="${escHtml(hex)}">
+            <span class="color-swatch-hex">${escHtml(hex)}</span>
         </button>
     `).join('');
 }
@@ -1271,8 +1271,8 @@ function renderPalette() {
     const paletteSection = document.getElementById('sidebar-palette');
     if (colors.length === 0) { paletteSection.style.display = 'none'; return; }
     paletteSection.style.display = 'block';
-    container.innerHTML = colors.map(hex => `
-        <div class="palette-color" style="background:${hex}" title="${hex} — clic pour retirer" onclick="removeColor('${hex}')"></div>
+    container.innerHTML = colors.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c)).map(hex => `
+        <div class="palette-color" style="background:${hex}" data-hex="${hex}" title="${escHtml(hex)} — clic pour retirer" onclick="removeColor(this.dataset.hex)"></div>
     `).join('');
 }
 
@@ -1361,7 +1361,7 @@ async function exportPDF() {
         <div style="font-family: 'Helvetica Neue', sans-serif; padding: 40px; color: #1A1714;">
             <div style="text-align:center; margin-bottom: 40px;">
                 <h1 style="font-size: 28px; margin-bottom: 4px;">${escHtml(currentProject.name)}</h1>
-                <p style="color: #888; font-size: 14px;">${currentProject.surface ? currentProject.surface + ' m²' : ''} ${currentProject.style ? '• ' + currentProject.style : ''}</p>
+                <p style="color: #888; font-size: 14px;">${currentProject.surface ? Number(currentProject.surface) + ' m²' : ''} ${currentProject.style ? '• ' + escHtml(currentProject.style) : ''}</p>
                 <p style="color: #C4704B; font-size: 20px; font-weight: 700; margin-top: 16px;">Budget total : ${formatPrice(currentProject.totalBudget || 0)}</p>
             </div>`;
 
@@ -1371,7 +1371,7 @@ async function exportPDF() {
         html += `
             <div style="margin-bottom: 32px; page-break-inside: avoid;">
                 <h2 style="font-size: 18px; border-bottom: 2px solid #E8DDD3; padding-bottom: 8px; margin-bottom: 16px;">
-                    ${room.icon || '🏠'} ${escHtml(room.name)}
+                    ${escHtml(room.icon || '🏠')} ${escHtml(room.name)}
                     <span style="float:right; color: #C4704B; font-size: 16px;">${formatPrice(roomBudget)}</span>
                 </h2>
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -1505,7 +1505,8 @@ function safeUrl(u) {
     if (!u) return '#';
     try {
         const p = new URL(String(u));
-        if (p.protocol === 'http:' || p.protocol === 'https:') return p.href;
+        if (p.protocol === 'http:' || p.protocol === 'https:')
+            return p.href.replace(/'/g,'%27').replace(/\(/g,'%28').replace(/\)/g,'%29');
     } catch (e) {}
     return '#';
 }
@@ -1513,6 +1514,11 @@ function safeUrl(u) {
 // Valide une couleur CSS #RRGGBB, sinon couleur par défaut
 function safeColor(c) {
     return /^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#FFF8E7';
+}
+
+// Valide le statut d'un item (whitelist) pour éviter l'injection dans les classes CSS
+function safeStatus(s) {
+    return ['planned','ordered','delivered','installed'].includes(s) ? s : 'planned';
 }
 
 // ─── DIMENSIONS & PLANS ──────────────────────────────────────
@@ -1640,14 +1646,14 @@ function renderMeasures() {
     let summaryHtml = '';
     const room = currentProject.rooms[currentRoom];
     if (room && room.surface) {
-        summaryHtml = `<div class="measures-summary">Surface déclarée : <strong>${room.surface} m²</strong></div>`;
+        summaryHtml = `<div class="measures-summary">Surface déclarée : <strong>${Number(room.surface)} m²</strong></div>`;
     }
     
     list.innerHTML = summaryHtml + roomMeasures.map(m => {
         const dims = [
-            m.length ? `${m.length} cm` : null,
-            m.width ? `× ${m.width} cm` : null,
-            m.height ? `× ${m.height} cm` : null
+            m.length ? `${Number(m.length)} cm` : null,
+            m.width ? `× ${Number(m.width)} cm` : null,
+            m.height ? `× ${Number(m.height)} cm` : null
         ].filter(Boolean).join(' ');
         const area = (m.length && m.width) ? ` = ${((m.length * m.width) / 10000).toFixed(2)} m²` : '';
         
@@ -2742,7 +2748,7 @@ function renderBudgetDashboard() {
                 ${roomBreakdown.map(r => `
                     <div class="budget-room-row">
                         <div class="budget-room-label">
-                            <span>${r.icon} ${escHtml(r.name)}</span>
+                            <span>${escHtml(r.icon || "🏠")} ${escHtml(r.name)}</span>
                             <span class="budget-room-amount">${formatPrice(r.total)}</span>
                         </div>
                         <div class="budget-bar-track">
@@ -2766,7 +2772,7 @@ function renderBudgetDashboard() {
                 <div class="budget-cat-list">
                     ${catBreakdown.map(c => `
                         <div class="budget-cat-row">
-                            <span class="budget-cat-emoji">${c.emoji}</span>
+                            <span class="budget-cat-emoji">${escHtml(c.emoji)}</span>
                             <span class="budget-cat-name">${escHtml(c.name)}</span>
                             <span class="budget-cat-count">${c.count}</span>
                             <span class="budget-cat-amount">${formatPrice(c.total)}</span>
@@ -2838,11 +2844,11 @@ function renderBudgetItemList(items) {
             const room = currentProject.rooms[item.roomIndex];
             const amount = (item.price || 0) * (item.qty || 1);
             return `
-                <div class="budget-item-row" onclick="selectRoom(${item.roomIndex})">
+                <div class="budget-item-row" data-room="${Number(item.roomIndex) || 0}" onclick="selectRoom(Number(this.dataset.room))">
                     <span class="budget-item-emoji">${getCategoryEmoji(item.category)}</span>
                     <div class="budget-item-info">
                         <span class="budget-item-name">${escHtml(item.name)}</span>
-                        <span class="budget-item-room">${room ? (room.icon || '🏠') + ' ' + room.name : ''} ${item.supplier ? '· ' + escHtml(item.supplier) : ''}</span>
+                        <span class="budget-item-room">${room ? escHtml(room.icon || '🏠') + ' ' + escHtml(room.name) : ''} ${item.supplier ? '· ' + escHtml(item.supplier) : ''}</span>
                     </div>
                     <span class="budget-item-amount">${formatPrice(amount)}</span>
                 </div>
@@ -3300,9 +3306,9 @@ function renderMoodboardView() {
 
     const roomName = currentProject.rooms[currentRoom]?.name || 'Pièce';
     const colors = currentProject.colors || [];
-    const colorStrip = colors.length > 0 ? `
+    const colorStrip = colors.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c)).length > 0 ? `
         <div class="mb-palette">
-            ${colors.map(c => `<div class="mb-palette-dot" style="background:${c}" title="${c}"></div>`).join('')}
+            ${colors.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c)).map(c => `<div class="mb-palette-dot" style="background:${c}" title="${escHtml(c)}"></div>`).join('')}
         </div>` : '';
     const totalBudget = items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
 
