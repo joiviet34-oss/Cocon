@@ -69,7 +69,7 @@ function renderProjects() {
         <div class="project-card" onclick="openProject('${p.id}')">
             <div class="project-card-header">
                 <div class="project-card-icon">🏠</div>
-                <button class="btn-icon-sm" onclick="event.stopPropagation(); deleteProject('${p.id}', '${escHtml(p.name).replace(/'/g, "\\'")}')" title="Supprimer">
+                <button class="btn-icon-sm" data-del="${p.id}" onclick="event.stopPropagation(); deleteProject(this.dataset.del)" title="Supprimer">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
             </div>
@@ -145,7 +145,9 @@ async function createProject(e) {
     }
 }
 
-async function deleteProject(id, name) {
+async function deleteProject(id) {
+    const _proj = projects.find(p => p.id === id);
+    const name = _proj ? _proj.name : 'ce projet';
     if (!confirm(`Supprimer "${name}" ? Cette action est irréversible.`)) return;
 
     try {
@@ -237,9 +239,9 @@ function renderProjectSidebar() {
              ondragover="event.preventDefault(); this.classList.add('drag-over')"
              ondragleave="this.classList.remove('drag-over')"
              ondrop="handleRoomDrop(event, ${i}); this.classList.remove('drag-over')">
-            <span class="sidebar-room-icon">${r.icon || '🏠'}</span>
+            <span class="sidebar-room-icon">${escHtml(r.icon || '🏠')}</span>
             <span class="sidebar-room-name">${escHtml(r.name)}</span>
-            ${r.surface ? `<span class="sidebar-room-surface">${r.surface}m²</span>` : ''}
+            ${r.surface ? `<span class="sidebar-room-surface">${escHtml(String(r.surface))}m²</span>` : ''}
             <button class="btn-icon-xs" onclick="event.stopPropagation(); deleteRoom(${i})" title="Supprimer">×</button>
         </div>
     `).join('');
@@ -623,10 +625,10 @@ function renderItems() {
              ondragstart="handleItemDragStart(event, '${item.id}')"
              ondragend="handleItemDragEnd(event)"
              onclick='openLightbox(JSON.parse(this.dataset.item))' data-item="${itemJson}" style="cursor:pointer">
-            <div class="item-card-img" style="background: ${item.imageUrl ? `url(${escHtml(item.imageUrl)}) center/cover` : '#F5F0EB'}">
+            <div class="item-card-img" style="background: ${item.imageUrl ? `url('${safeUrl(item.imageUrl)}') center/cover` : '#F5F0EB'}">
                 ${!item.imageUrl ? `<span style="font-size:2rem">${getCategoryEmoji(item.category)}</span>` : ''}
                 ${item.status && item.status !== 'planned' ? `<span class="item-badge item-status-${item.status}">${getStatusLabel(item.status)}</span>` : ''}
-                ${item.link ? `<a href="${escHtml(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-source-badge" onclick="trackAffClick('${escHtml(item.supplier || '')}', '${escHtml(item.category || '')}');event.stopPropagation()" style="background:${getLinkSource(item.link).color}">${getLinkSource(item.link).icon}${getLinkSource(item.link).label}</a>` : ''}
+                ${item.link ? `<a href="${safeUrl(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-source-badge" data-brand="${escHtml(item.supplier || '')}" data-cat="${escHtml(item.category || '')}" onclick="trackAffClick(this.dataset.brand,this.dataset.cat);event.stopPropagation()" style="background:${getLinkSource(item.link).color}">${getLinkSource(item.link).icon}${getLinkSource(item.link).label}</a>` : ''}
                 ${isInspo ? '<span class="item-badge-inspo">✨</span>' : ''}
             </div>
             <div class="item-card-body">
@@ -639,7 +641,7 @@ function renderItems() {
                 </div>
                 ${!isInspo ? `<div class="item-card-price">${formatPrice((item.price || 0) * (item.qty || 1))}${item.qty > 1 ? ` <small>(${item.qty} × ${formatPrice(item.price)})</small>` : ''}</div>` : ''}
                 ${item.supplier ? `<div class="item-card-supplier">${escHtml(item.supplier)}${item.subcategory ? ' · ' + escHtml(item.subcategory) : ''}</div>` : (item.subcategory ? `<div class="item-card-supplier">${escHtml(item.subcategory)}</div>` : '')}
-                ${item.link ? `<a href="${escHtml(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-card-link" onclick="trackAffClick('${escHtml(item.supplier || '')}', '${escHtml(item.category || '')}');event.stopPropagation()">🔗 Voir le produit</a>` : ''}
+                ${item.link ? `<a href="${safeUrl(getItemAffiliateUrl(item) || item.link)}" target="_blank" rel="noopener" class="item-card-link" data-brand="${escHtml(item.supplier || '')}" data-cat="${escHtml(item.category || '')}" onclick="trackAffClick(this.dataset.brand,this.dataset.cat);event.stopPropagation()">🔗 Voir le produit</a>` : ''}
                 ${item.notes ? `<div class="item-card-notes">${escHtml(item.notes)}</div>` : ''}
                 <div class="item-votes">
                     ${renderVoteButtons(item)}
@@ -674,7 +676,7 @@ function renderCategoryTabs(categories, items) {
         const count = cat === 'all' ? items.length : items.filter(i => i.category === cat).length;
         const label = cat === 'all' ? 'Tous' : cat;
         const emoji = cat === 'all' ? '' : getCategoryEmoji(cat) + ' ';
-        return `<button class="category-tab ${currentCategoryFilter === cat ? 'active' : ''}" data-cat="${cat}" onclick="setCategoryFilter('${escHtml(cat)}')">${emoji}${label} <span class="cat-count">${count}</span></button>`;
+        return `<button class="category-tab ${currentCategoryFilter === cat ? 'active' : ''}" data-cat="${escHtml(cat)}" onclick="setCategoryFilter(this.dataset.cat)">${emoji}${label} <span class="cat-count">${count}</span></button>`;
     }).join('');
 }
 
@@ -751,16 +753,16 @@ function getLinkBadgeHTML(link) {
     try {
         const isPinterest = link.includes('pinterest.com') || link.includes('pin.it');
         if (isPinterest) {
-            return `<a href="${escHtml(link)}" target="_blank" class="link-badge pinterest" onclick="event.stopPropagation()">
+            return `<a href="${safeUrl(link)}" target="_blank" class="link-badge pinterest" onclick="event.stopPropagation()">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
                 Pinterest
             </a>`;
         } else {
             const domain = new URL(link).hostname.replace('www.', '');
-            return `<a href="${escHtml(link)}" target="_blank" class="link-badge generic" onclick="event.stopPropagation()">🔗 ${domain}</a>`;
+            return `<a href="${safeUrl(link)}" target="_blank" class="link-badge generic" onclick="event.stopPropagation()">🔗 ${domain}</a>`;
         }
     } catch (e) {
-        return `<a href="${escHtml(link)}" target="_blank" class="link-badge generic" onclick="event.stopPropagation()">🔗 Lien</a>`;
+        return `<a href="${safeUrl(link)}" target="_blank" class="link-badge generic" onclick="event.stopPropagation()">🔗 Lien</a>`;
     }
 }
 
@@ -1080,12 +1082,12 @@ function renderInspirationResults(suggestions) {
         <div class="inspo-card ${hasImage ? 'inspo-card-visual' : ''}">
             <div class="inspo-card-img" ${hasImage ? `style="padding:0; background:var(--cream)"` : ''}>
                 ${hasImage 
-                    ? `<img src="${escHtml(s.image_url)}" alt="${escHtml(s.name)}" class="inspo-card-photo" onerror="this.parentElement.innerHTML='<span>${s.emoji || getCategoryEmoji(s.category || 'Inspiration')}</span>'">`
+                    ? `<img src="${safeUrl(s.image_url)}" alt="${escHtml(s.name)}" class="inspo-card-photo" onerror="this.style.display='none'">`
                     : `<span>${s.emoji || getCategoryEmoji(s.category || 'Inspiration')}</span>`
                 }
             </div>
             <div class="inspo-card-body">
-                <h4>${hasLink ? `<a href="${escHtml(s.link)}" target="_blank" rel="noopener" class="inspo-link">${escHtml(s.name)}</a>` : escHtml(s.name)}</h4>
+                <h4>${hasLink ? `<a href="${safeUrl(s.link)}" target="_blank" rel="noopener" class="inspo-link">${escHtml(s.name)}</a>` : escHtml(s.name)}</h4>
                 <p>${escHtml(s.description || '')}</p>
                 <div class="inspo-card-meta">
                     ${priceDisplay ? `<span class="inspo-price">${escHtml(priceDisplay)}</span>` : ''}
@@ -1490,10 +1492,27 @@ window.addEventListener('online', () => {
 // ─── HELPERS ─────────────────────────────────────────────────
 
 function escHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Valide une URL (http/https uniquement), sinon renvoie '#'
+function safeUrl(u) {
+    if (!u) return '#';
+    try {
+        const p = new URL(String(u));
+        if (p.protocol === 'http:' || p.protocol === 'https:') return p.href;
+    } catch (e) {}
+    return '#';
+}
+
+// Valide une couleur CSS #RRGGBB, sinon couleur par défaut
+function safeColor(c) {
+    return /^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#FFF8E7';
 }
 
 // ─── DIMENSIONS & PLANS ──────────────────────────────────────
@@ -1595,7 +1614,7 @@ function renderPlans() {
     
     grid.innerHTML = roomPlans.map(p => `
         <div class="plan-card">
-            <div class="plan-card-img" onclick="openPlanLightbox('${escHtml(p.imageUrl)}')" style="background: url(${escHtml(p.imageUrl)}) center/contain no-repeat, #F5F0EB; cursor:pointer"></div>
+            <div class="plan-card-img" data-plan-url="${escHtml(p.imageUrl)}" onclick="openPlanLightbox(this.dataset.planUrl)" style="background: url('${safeUrl(p.imageUrl)}') center/contain no-repeat, #F5F0EB; cursor:pointer"></div>
             <div class="plan-card-info">
                 <span class="plan-card-name">${escHtml(p.name || 'Plan')}</span>
                 <button class="btn-icon-xs" onclick="deletePlan('${p.id}')" title="Supprimer">🗑️</button>
@@ -2005,7 +2024,7 @@ function renderPostits() {
     }
     
     board.innerHTML = roomPostits.map(p => `
-        <div class="postit" style="background:${p.color || '#FFF8E7'}">
+        <div class="postit" style="background:${safeColor(p.color)}">
             <div class="postit-header">
                 <h4 class="postit-title">${escHtml(p.title)}</h4>
                 <div class="postit-actions">
@@ -2431,9 +2450,9 @@ function renderExplorePage() {
     
     page.innerHTML = `
         <div class="explore-filters">
-            <button class="explore-filter-btn ${exploreFilter === 'all' ? 'active' : ''}" onclick="setExploreFilter('all')">Tous</button>
+            <button class="explore-filter-btn ${exploreFilter === 'all' ? 'active' : ''}" data-explore-filter="all" onclick="setExploreFilter(this.dataset.exploreFilter)">Tous</button>
             ${EXPLORE_DATA.map(c => `
-                <button class="explore-filter-btn ${exploreFilter === c.cat ? 'active' : ''}" onclick="setExploreFilter('${c.cat}')" style="${exploreFilter === c.cat ? 'background:' + c.color + ';color:white;border-color:' + c.color : ''}">
+                <button class="explore-filter-btn ${exploreFilter === c.cat ? 'active' : ''}" data-explore-filter="${escHtml(c.cat)}" onclick="setExploreFilter(this.dataset.exploreFilter)" style="${exploreFilter === c.cat ? 'background:' + c.color + ';color:white;border-color:' + c.color : ''}">
                     ${c.icon} ${c.cat}
                 </button>
             `).join('')}
@@ -2452,7 +2471,7 @@ function renderExplorePage() {
                         const isHighlight = b.highlight;
                         const isNew = b.tag === 'new';
                         return `
-                        <a href="${affUrl}" target="_blank" rel="noopener" class="explore-card${isHighlight ? ' explore-highlight' : ''}" onclick="trackAffClick('${escHtml(b.name)}', '${escHtml(cat.cat)}');event.stopPropagation()">
+                        <a href="${safeUrl(affUrl)}" target="_blank" rel="noopener" class="explore-card${isHighlight ? ' explore-highlight' : ''}" data-brand="${escHtml(b.name)}" data-cat="${escHtml(cat.cat)}" onclick="trackAffClick(this.dataset.brand,this.dataset.cat)">
                             ${isNew ? '<span class="explore-badge-new">Nouveau</span>' : ''}
                             ${isHighlight ? '<span class="explore-badge-fav">★ Coup de cœur</span>' : ''}
                             <div class="explore-card-logo" style="background:${isHighlight ? cat.color + '22' : cat.color + '10'};color:${cat.color};${isHighlight ? 'font-size:1.1rem;width:44px;height:44px' : ''}">${b.logo}</div>
@@ -2546,12 +2565,12 @@ function renderWishlist(items) {
             <div class="wishlist-grid">
                 ${items.map(item => `
                     <div class="wishlist-card">
-                        ${item.imageUrl ? `<div class="wishlist-card-img" style="background-image:url('${escHtml(item.imageUrl)}')"></div>` : `<div class="wishlist-card-placeholder">${item.emoji || '💫'}</div>`}
+                        ${item.imageUrl ? `<div class="wishlist-card-img" style="background-image:url('${safeUrl(item.imageUrl)}')"></div>` : `<div class="wishlist-card-placeholder">${escHtml(item.emoji || '💫')}</div>`}
                         <div class="wishlist-card-body">
                             <h4>${escHtml(item.title)}</h4>
                             ${item.note ? `<p class="wishlist-note">${escHtml(item.note)}</p>` : ''}
-                            ${item.price ? `<span class="wishlist-price">${item.price} €</span>` : ''}
-                            ${item.link ? `<a href="${escHtml(item.link)}" target="_blank" rel="noopener" class="wishlist-link" onclick="event.stopPropagation()">🔗 Voir</a>` : ''}
+                            ${item.price ? `<span class="wishlist-price">${escHtml(String(item.price))} €</span>` : ''}
+                            ${item.link ? `<a href="${safeUrl(item.link)}" target="_blank" rel="noopener" class="wishlist-link" onclick="event.stopPropagation()">🔗 Voir</a>` : ''}
                         </div>
                         <button class="wishlist-delete" onclick="deleteWishlistItem('${item.id}')" title="Supprimer">×</button>
                     </div>
@@ -2958,14 +2977,14 @@ function renderPublicView(project, items) {
     rooms.forEach((room, ri) => {
         const ri_items = items.filter(i => i.roomIndex === ri);
         if (ri_items.length === 0) return;
-        roomsHtml += `<div style="margin-bottom:2rem"><h2 style="font-family:var(--font-display);font-size:1.2rem;color:var(--charcoal);margin-bottom:1rem">${room.icon || '🏠'} ${escHtml(room.name)}${room.surface ? ` <span style="font-weight:400;font-size:0.8rem;opacity:0.5">${room.surface} m²</span>` : ''}</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">`;
+        roomsHtml += `<div style="margin-bottom:2rem"><h2 style="font-family:var(--font-display);font-size:1.2rem;color:var(--charcoal);margin-bottom:1rem">${escHtml(room.icon || '🏠')} ${escHtml(room.name)}${room.surface ? ` <span style="font-weight:400;font-size:0.8rem;opacity:0.5">${escHtml(String(room.surface))} m²</span>` : ''}</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">`;
         ri_items.forEach(item => {
-            roomsHtml += `<div style="background:white;border-radius:12px;overflow:hidden;border:1px solid var(--border)">${item.imageUrl ? `<div style="aspect-ratio:4/3;background:url(${escHtml(item.imageUrl)}) center/cover"></div>` : `<div style="aspect-ratio:4/3;background:var(--warm-white);display:flex;align-items:center;justify-content:center;font-size:2rem">${getCategoryEmoji(item.category)}</div>`}<div style="padding:0.7rem"><div style="font-weight:600;font-size:0.82rem;color:var(--charcoal)">${escHtml(item.name)}</div>${item.supplier ? `<div style="font-size:0.72rem;color:var(--deep-brown);opacity:0.5">${escHtml(item.supplier)}</div>` : ''}${item.price ? `<div style="font-size:0.82rem;color:var(--terracotta);font-weight:600;margin-top:0.3rem">${formatPrice(item.price * (item.qty || 1))}</div>` : ''}${item.status ? `<div style="font-size:0.68rem;margin-top:0.2rem;opacity:0.5">${{'planned':'📋 Prévu','ordered':'📦 Commandé','delivered':'✅ Livré','installed':'🏠 Installé'}[item.status] || item.status}</div>` : ''}</div></div>`;
+            roomsHtml += `<div style="background:white;border-radius:12px;overflow:hidden;border:1px solid var(--border)">${item.imageUrl ? `<div style="aspect-ratio:4/3;background:url('${safeUrl(item.imageUrl)}') center/cover"></div>` : `<div style="aspect-ratio:4/3;background:var(--warm-white);display:flex;align-items:center;justify-content:center;font-size:2rem">${getCategoryEmoji(item.category)}</div>`}<div style="padding:0.7rem"><div style="font-weight:600;font-size:0.82rem;color:var(--charcoal)">${escHtml(item.name)}</div>${item.supplier ? `<div style="font-size:0.72rem;color:var(--deep-brown);opacity:0.5">${escHtml(item.supplier)}</div>` : ''}${item.price ? `<div style="font-size:0.82rem;color:var(--terracotta);font-weight:600;margin-top:0.3rem">${formatPrice(item.price * (item.qty || 1))}</div>` : ''}${item.status ? `<div style="font-size:0.68rem;margin-top:0.2rem;opacity:0.5">${{'planned':'📋 Prévu','ordered':'📦 Commandé','delivered':'✅ Livré','installed':'🏠 Installé'}[item.status] || escHtml(item.status)}</div>` : ''}</div></div>`;
         });
         roomsHtml += '</div></div>';
     });
     
-    document.body.innerHTML = `<div style="min-height:100vh;background:var(--cream);font-family:var(--font-body)"><nav style="background:white;border-bottom:1px solid var(--cream);padding:0.8rem 2rem;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:1rem"><span style="font-family:var(--font-display);font-size:1.3rem;color:var(--charcoal)">cocon<span style="color:var(--terracotta)">.</span></span><span style="font-size:0.78rem;background:var(--warm-white);padding:0.2rem 0.6rem;border-radius:var(--radius-full);color:var(--deep-brown)">👁️ Vue publique</span></div><a href="/" style="font-size:0.78rem;color:var(--terracotta);text-decoration:none">Créer mon projet →</a></nav><main style="max-width:1000px;margin:2rem auto;padding:0 1.5rem"><div style="margin-bottom:2rem"><h1 style="font-family:var(--font-display);font-size:1.8rem;color:var(--charcoal)">${escHtml(project.name)}</h1><p style="font-size:0.85rem;color:var(--deep-brown);opacity:0.6">${project.surface ? project.surface + ' m² • ' : ''}${project.style || ''} • ${items.length} élément${items.length > 1 ? 's' : ''} • ${formatPrice(total)}</p></div>${roomsHtml}<div style="text-align:center;padding:3rem 0;border-top:1px solid var(--border);margin-top:2rem"><p style="font-size:0.82rem;color:var(--deep-brown);opacity:0.4">Partagé via Cocon — l'outil gratuit pour organiser vos projets déco</p><a href="/" style="display:inline-block;margin-top:0.8rem;background:var(--terracotta);color:white;padding:0.5rem 1.2rem;border-radius:var(--radius-full);text-decoration:none;font-size:0.82rem">Créer mon projet gratuitement</a></div></main></div>`;
+    document.body.innerHTML = `<div style="min-height:100vh;background:var(--cream);font-family:var(--font-body)"><nav style="background:white;border-bottom:1px solid var(--cream);padding:0.8rem 2rem;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:1rem"><span style="font-family:var(--font-display);font-size:1.3rem;color:var(--charcoal)">cocon<span style="color:var(--terracotta)">.</span></span><span style="font-size:0.78rem;background:var(--warm-white);padding:0.2rem 0.6rem;border-radius:var(--radius-full);color:var(--deep-brown)">👁️ Vue publique</span></div><a href="/" style="font-size:0.78rem;color:var(--terracotta);text-decoration:none">Créer mon projet →</a></nav><main style="max-width:1000px;margin:2rem auto;padding:0 1.5rem"><div style="margin-bottom:2rem"><h1 style="font-family:var(--font-display);font-size:1.8rem;color:var(--charcoal)">${escHtml(project.name)}</h1><p style="font-size:0.85rem;color:var(--deep-brown);opacity:0.6">${project.surface ? escHtml(String(project.surface)) + ' m² • ' : ''}${escHtml(project.style || '')} • ${items.length} élément${items.length > 1 ? 's' : ''} • ${formatPrice(total)}</p></div>${roomsHtml}<div style="text-align:center;padding:3rem 0;border-top:1px solid var(--border);margin-top:2rem"><p style="font-size:0.82rem;color:var(--deep-brown);opacity:0.4">Partagé via Cocon — l'outil gratuit pour organiser vos projets déco</p><a href="/" style="display:inline-block;margin-top:0.8rem;background:var(--terracotta);color:white;padding:0.5rem 1.2rem;border-radius:var(--radius-full);text-decoration:none;font-size:0.82rem">Créer mon projet gratuitement</a></div></main></div>`;
     const loader = document.getElementById('loading-screen');
     if (loader) loader.remove();
 }
@@ -2985,6 +3004,19 @@ async function forgotPassword(e) {
     }
 }
 
+// ─── STORAGE HELPERS ───────────────────────────────────────────
+
+async function deleteStorageFolder(path) {
+    try {
+        const ref = firebase.storage().ref().child(path);
+        const result = await ref.listAll();
+        await Promise.all(result.items.map(item => item.delete()));
+        await Promise.all(result.prefixes.map(p => deleteStorageFolder(p.fullPath)));
+    } catch (e) {
+        console.warn('Storage cleanup warning for', path, e.code || e.message);
+    }
+}
+
 // ─── DELETE ACCOUNT ──────────────────────────────────────────
 
 function showDeleteAccountModal() {
@@ -3001,7 +3033,7 @@ async function deleteAccount() {
     try {
         const projectsSnap = await db.collection('projects').where('ownerId', '==', currentUser.uid).get();
         for (const projectDoc of projectsSnap.docs) {
-            for (const sub of ['items', 'comments', 'postits', 'measures', 'plans', 'members']) {
+            for (const sub of ['items', 'comments', 'postits', 'measures', 'plans', 'members', 'wishlist']) {
                 const subSnap = await db.collection('projects').doc(projectDoc.id).collection(sub).get();
                 if (subSnap.docs.length > 0) {
                     const batch = db.batch();
@@ -3009,6 +3041,9 @@ async function deleteAccount() {
                     await batch.commit();
                 }
             }
+            // Supprimer les fichiers Storage liés au projet
+            await deleteStorageFolder(`items/${projectDoc.id}`);
+            await deleteStorageFolder(`projects/${projectDoc.id}/plans`);
             await db.collection('projects').doc(projectDoc.id).delete();
         }
         // Supprimer les jetons de partage de l'utilisateur

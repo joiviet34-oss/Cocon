@@ -120,10 +120,12 @@ function showAuthError(msg) {
 }
 
 function updateUserUI(user) {
-    const name = user.displayName || user.email.split('@')[0];
+    // user.email est null pour les utilisateurs anonymes
+    const name = user.displayName || (user.email ? user.email.split('@')[0] : 'Invité');
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     document.querySelectorAll('[id^="user-avatar"]').forEach(el => el.textContent = initials);
     document.querySelectorAll('[id^="user-name"]').forEach(el => el.textContent = name);
+    // Ne pas afficher le bouton feedback pour les utilisateurs anonymes
     const fab = document.getElementById('feedback-fab');
-    if (fab) fab.style.display = 'flex';
+    if (fab) fab.style.display = user.isAnonymous ? 'none' : 'flex';
 }
