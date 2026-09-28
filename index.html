@@ -25,7 +25,8 @@
     <link rel="icon" href="/favicon-512.png" type="image/png" sizes="512x512">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="/img/home/app-moodboard-salon.webp" type="image/webp">
 
     <script type="application/ld+json">
     {
@@ -56,792 +57,319 @@
         :root {
             --ivory: #F4EFE6;
             --paper: #ECE5D8;
+            --card: #FFFDF9;
             --ink: #1C1F2A;
-            --ink-soft: #2D3142;
+            --ink-2: #2D3142;
+            --text: #3A3D4A;
             --burnt: #B8553A;
             --burnt-dark: #8E3F2C;
             --ochre: #D4A574;
-            --stone: #8E8378;
-            --stone-light: #B8AFA3;
-            --border: #DDD3C2;
-            --border-soft: #E8E0D2;
-            --serif: 'Fraunces', 'DM Serif Display', Georgia, serif;
+            --ochre-soft: #EBD3B4;
+            --stone: #6F655B;
+            --line: #DDD3C2;
+            --line-soft: #E8E0D2;
+            --grid: #E4DACA;
+            --serif: 'Fraunces', Georgia, serif;
             --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+            --pad: 120px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         body {
-            font-family: var(--sans);
-            font-size: 16px;
-            color: var(--ink);
-            background: var(--ivory);
-            line-height: 1.55;
+            font-family: var(--sans); font-size: 16px; line-height: 1.55; color: var(--ink);
+            background-color: var(--ivory);
+            background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 32px 32px;
+            overflow-x: hidden;
         }
         a { color: inherit; text-decoration: none; }
-        img, svg { display: block; max-width: 100%; }
-        button { font-family: inherit; cursor: pointer; }
+        img { display: block; max-width: 100%; }
+        h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.02em; }
+        .it { font-style: italic; color: var(--burnt); }
+        .it-ochre { font-style: italic; color: var(--ochre); }
+        .mono { font-family: var(--mono); }
+        .wrap { max-width: 1440px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+        .label { font-family: var(--mono); font-size: 12px; color: var(--stone); letter-spacing: 0.02em; }
+        .label-accent { font-family: var(--mono); font-size: 12px; color: var(--burnt-dark); }
+        .tag { display: inline-block; font-family: var(--mono); font-size: 12px; color: var(--stone); padding: 6px 10px; border: 1px solid var(--line); background: var(--card); }
 
-        body::before {
-            content: "";
-            position: fixed; inset: 0;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.4;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.12 0 0 0 0 0.16 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            mix-blend-mode: multiply;
-        }
-        main, nav, footer, section { position: relative; z-index: 2; }
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; font-weight: 500; font-size: 15px; padding: 14px 22px; transition: background .2s, transform .2s; min-height: 44px; }
+        .btn .arrow { transition: transform .2s; }
+        .btn:hover .arrow { transform: translateX(3px); }
+        .btn-accent { background: var(--burnt); color: #FFFDF9; }
+        .btn-accent:hover { background: var(--burnt-dark); }
+        .btn-ink { background: var(--ink); color: var(--ivory); }
+        .btn-ink:hover { background: var(--burnt); }
+        .btn-lg { font-size: 16px; padding: 18px 28px; }
+        .link-box { display: inline-flex; align-items: center; min-height: 40px; font-family: var(--mono); font-size: 13px; padding: 8px 14px; border: 1px solid var(--ink); border-radius: 6px; transition: background .2s, color .2s; }
+        .link-box:hover { background: var(--ink); color: var(--ivory); }
+        .link-line { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; border-bottom: 1px solid var(--ink); }
 
-        h1, h2, h3, h4 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015em; }
-        .italic { font-style: italic; }
+        /* Status pills */
+        .st { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: .06em; padding: 4px 7px; border-radius: 99px; white-space: nowrap; }
+        .st-envie { background: #E6E1DA; color: #5B534B; }
+        .st-commande { background: #F1DEC6; color: #7A4A14; }
+        .st-livre { background: #DCE3D6; color: #3F5238; }
+        .st-installe { background: #F2D9D0; color: var(--burnt-dark); }
 
-        .nav {
-            position: sticky; top: 0; z-index: 50;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            padding: 1.1rem 2.5rem;
-            background: rgba(244, 239, 230, 0.85);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-left {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.78rem;
-            color: var(--stone);
-        }
-        .nav-logo {
-            font-family: var(--serif);
-            font-size: 1.35rem;
-            font-weight: 500;
-            letter-spacing: -0.02em;
-            justify-self: center;
-        }
-        .nav-logo span { color: var(--burnt); }
-        .nav-right {
-            justify-self: end;
-            display: flex; align-items: center; gap: 1.8rem;
-        }
-        .nav-right a {
-            font-size: 0.84rem;
-            color: var(--ink-soft);
-            transition: color 0.15s;
-        }
-        .nav-right a:hover { color: var(--burnt); }
-        .nav-cta {
-            background: var(--ink);
-            color: var(--ivory) !important;
-            padding: 0.55rem 1.1rem;
-            border-radius: 100px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-        .nav-cta:hover { background: var(--burnt) !important; }
+        /* Nav */
+        .nav { position: sticky; top: 0; z-index: 50; background: rgba(244,239,230,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+        .nav .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; padding-bottom: 16px; }
+        .nav-left { display: flex; align-items: center; gap: 48px; }
+        .logo { font-family: var(--serif); font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+        .logo span { color: var(--burnt); }
+        .nav-links { display: flex; gap: 32px; font-size: 14px; }
+        .nav-links a:hover, .nav-login:hover { color: var(--burnt-dark); }
+        .nav-right { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+        .nav-right .btn { font-size: 14px; padding: 11px 20px; }
 
-        .hero { padding: 5rem 2.5rem 6rem; max-width: 1400px; margin: 0 auto; }
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5rem;
-            align-items: center;
-        }
-        .hero-eyebrow {
-            display: flex; align-items: center; gap: 0.8rem;
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.22em;
-            color: var(--stone);
-            margin-bottom: 1.8rem;
-            font-weight: 500;
-        }
-        .hero-eyebrow::before {
-            content: ""; width: 28px; height: 1px; background: var(--burnt);
-        }
-        .hero h1 {
-            font-size: clamp(3rem, 6.2vw, 5.4rem);
-            line-height: 0.98;
-            letter-spacing: -0.025em;
-            margin-bottom: 1.8rem;
-        }
-        .hero h1 .accent {
-            font-style: italic;
-            color: var(--burnt);
-            font-weight: 400;
-        }
-        .hero-lede {
-            font-family: var(--serif);
-            font-weight: 300;
-            font-size: 1.2rem;
-            line-height: 1.45;
-            color: var(--ink-soft);
-            max-width: 480px;
-            margin-bottom: 2.5rem;
-            letter-spacing: -0.005em;
-        }
-        .hero-actions {
-            display: flex; gap: 0.7rem; flex-wrap: wrap;
-            margin-bottom: 3rem;
-        }
-        .btn {
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            padding: 0.95rem 1.7rem;
-            border-radius: 100px;
-            font-size: 0.92rem; font-weight: 500;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            font-family: var(--sans);
-        }
-        .btn-primary { background: var(--ink); color: var(--ivory); }
-        .btn-primary:hover { background: var(--burnt); transform: translateY(-1px); }
-        .btn-ghost {
-            background: transparent;
-            color: var(--ink);
-            border-color: var(--border);
-        }
-        .btn-ghost:hover { border-color: var(--ink); }
-        .btn-arrow { transition: transform 0.2s; display: inline-block; }
-        .btn:hover .btn-arrow { transform: translateX(3px); }
+        /* Hero */
+        .hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 64px; align-items: center; padding-top: 88px; padding-bottom: 88px; }
+        .hero-text { display: flex; flex-direction: column; gap: 28px; }
+        .eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 13px; color: var(--stone); }
+        .eyebrow::before { content: ""; width: 8px; height: 8px; background: var(--burnt); }
+        .hero h1 { font-size: clamp(48px, 6.1vw, 88px); line-height: .98; letter-spacing: -0.03em; }
+        .hero h1 .it { background: linear-gradient(transparent 62%, var(--ochre-soft) 62%, var(--ochre-soft) 92%, transparent 92%); }
+        .hero-lede { font-size: 19px; line-height: 1.55; color: var(--text); max-width: 520px; }
+        .hero-stats { display: flex; gap: 40px; padding-top: 24px; border-top: 1px solid var(--line); max-width: 560px; }
+        .hero-stats div { display: flex; flex-direction: column; gap: 4px; }
+        .hero-stats strong { font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.1; white-space: nowrap; }
+        .hero-stats span { font-family: var(--mono); font-size: 12px; color: var(--stone); }
 
-        .hero-foot {
-            display: flex; align-items: center; gap: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border);
-            font-size: 0.82rem;
-            color: var(--stone);
-        }
-        .hero-foot-item { display: flex; flex-direction: column; gap: 0.1rem; }
-        .hero-foot-item strong {
-            color: var(--ink); font-weight: 500;
-            font-family: var(--serif);
-            font-size: 1.05rem;
-        }
-        .hero-foot-item span { font-size: 0.72rem; }
+        .hero-visual { position: relative; height: 600px; }
+        .shape { position: absolute; }
+        .browser { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 40px 80px -30px rgba(28,31,42,.4); }
+        .browser-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); background: var(--ivory); }
+        .browser-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+        .browser-bar span { margin-left: 10px; font-family: var(--mono); font-size: 10px; color: var(--stone); }
+        .browser img { width: 100%; object-fit: cover; object-position: top left; }
+        .hv-browser { position: absolute; top: 30px; left: 0; width: 86%; }
+        .hv-browser img { height: 400px; }
+        .phone { background: var(--ink); padding: 9px; border-radius: 34px; box-shadow: 0 40px 80px -30px rgba(28,31,42,.5); }
+        .phone-screen { border-radius: 26px; overflow: hidden; background: var(--card); height: 100%; }
+        .phone-screen img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+        .hv-phone { position: absolute; bottom: 10px; right: 0; width: 196px; height: 440px; }
+        .note { position: absolute; border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.35; }
+        .note .mono { font-size: 10px; letter-spacing: .08em; }
+        .note-dark { background: var(--ink); color: var(--ivory); box-shadow: 0 24px 50px -20px rgba(28,31,42,.5); }
+        .note-dark .mono { color: var(--ochre); }
+        .note-light { background: var(--card); border: 1px solid var(--line); box-shadow: 0 24px 50px -24px rgba(28,31,42,.35); }
+        .note-light .mono { color: var(--stone); }
+        .hv-note { top: 470px; left: -24px; width: 250px; transform: rotate(-3deg); }
+        .hv-split { top: 0; right: -10px; width: 200px; transform: rotate(2deg); }
 
-        .demo {
-            background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow:
-                0 1px 0 var(--border-soft),
-                0 30px 60px -20px rgba(28, 31, 42, 0.18),
-                0 18px 36px -18px rgba(28, 31, 42, 0.12);
-            position: relative;
-        }
-        .demo::before {
-            content: "";
-            position: absolute;
-            top: -12px; left: 50%;
-            width: 56px; height: 24px;
-            background: var(--burnt);
-            opacity: 0.85;
-            border-radius: 4px;
-            transform: translateX(-50%) rotate(-2deg);
-            box-shadow: inset 0 -8px 0 rgba(0,0,0,0.08);
-        }
-        .demo-head {
-            display: flex; justify-content: space-between; align-items: baseline;
-            padding-bottom: 1.1rem;
-            border-bottom: 1px solid var(--border-soft);
-            margin-bottom: 1.2rem;
-        }
-        .demo-title {
-            font-family: var(--serif);
-            font-size: 1.25rem;
-            font-weight: 500;
-        }
-        .demo-title em { font-style: italic; color: var(--stone); font-size: 0.85rem; font-weight: 400; margin-left: 0.3rem; }
-        .demo-budget { text-align: right; }
-        .demo-budget-amount {
-            font-family: var(--serif);
-            font-size: 1.35rem;
-            line-height: 1;
-        }
-        .demo-budget-label {
-            font-size: 0.66rem;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: var(--stone);
-            margin-top: 0.25rem;
-        }
-        .demo-rooms { display: flex; gap: 0.4rem; margin-bottom: 1.2rem; font-size: 0.78rem; }
-        .demo-room {
-            padding: 0.35rem 0.75rem;
-            border-radius: 100px;
-            background: var(--ivory);
-            color: var(--stone);
-            font-weight: 500;
-        }
-        .demo-room.active { background: var(--ink); color: var(--ivory); }
-        .demo-list { display: flex; flex-direction: column; gap: 0.55rem; }
-        .demo-item {
-            display: grid;
-            grid-template-columns: 38px 1fr auto auto;
-            align-items: center;
-            gap: 0.9rem;
-            padding: 0.75rem 0.9rem;
-            background: var(--ivory);
-            border-radius: 10px;
-        }
-        .demo-thumb {
-            width: 38px; height: 38px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .demo-item-name { font-size: 0.88rem; font-weight: 500; }
-        .demo-item-vendor { font-size: 0.72rem; color: var(--stone); margin-top: 0.05rem; }
-        .demo-item-price {
-            font-family: var(--serif);
-            font-size: 0.95rem;
-        }
-        .demo-status {
-            font-size: 0.66rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            padding: 0.25rem 0.55rem;
-            border-radius: 100px;
-            white-space: nowrap;
-        }
-        .status-envie { background: rgba(184, 175, 163, 0.25); color: var(--stone); }
-        .status-commande { background: rgba(212, 165, 116, 0.3); color: #8B5A1F; }
-        .status-livre { background: rgba(139, 158, 130, 0.3); color: #4F6447; }
-        .status-installe { background: rgba(184, 85, 58, 0.18); color: var(--burnt-dark); }
+        /* Brands */
+        .brands .wrap { display: flex; flex-direction: column; gap: 20px; padding-bottom: 96px; }
+        .brand-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--card); }
+        .brand-grid div { padding: 28px 8px; text-align: center; font-family: var(--serif); font-size: 22px; border-right: 1px solid var(--line); }
+        .brand-grid div:last-child { border-right: none; font-family: var(--mono); font-size: 14px; color: var(--stone); display: flex; align-items: center; justify-content: center; }
 
-        .process {
-            background: var(--ink);
-            color: var(--ivory);
-            padding: 6rem 2.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        .process-inner { max-width: 1280px; margin: 0 auto; }
-        .process-head {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            margin-bottom: 5rem;
-            align-items: end;
-        }
-        .process-eyebrow {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.9rem;
-            color: var(--ochre);
-            margin-bottom: 1rem;
-        }
-        .process h2 {
-            font-size: clamp(2.2rem, 4.2vw, 3.8rem);
-            line-height: 1.02;
-            letter-spacing: -0.02em;
-        }
-        .process h2 .italic { color: var(--ochre); }
-        .process-lede {
-            font-family: var(--serif);
-            font-weight: 300;
-            font-size: 1.1rem;
-            line-height: 1.55;
-            color: rgba(244, 239, 230, 0.78);
-            max-width: 460px;
-        }
-        .process-steps {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0;
-        }
-        .step {
-            padding: 2rem 1.8rem;
-            border-left: 1px solid rgba(244, 239, 230, 0.12);
-        }
-        .step:first-child { border-left: none; padding-left: 0; }
-        .step-num {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.85rem;
-            color: var(--ochre);
-            margin-bottom: 1.2rem;
-            display: flex; align-items: center; gap: 0.6rem;
-        }
-        .step-num::after {
-            content: ""; flex: 1; height: 1px; background: rgba(244, 239, 230, 0.15);
-        }
-        .step h3 {
-            font-size: 1.55rem;
-            line-height: 1.1;
-            margin-bottom: 1rem;
-        }
-        .step p {
-            font-size: 0.9rem;
-            color: rgba(244, 239, 230, 0.65);
-            line-height: 1.6;
-        }
+        /* Bento */
+        .bento { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        .bento .wrap { padding-top: 96px; padding-bottom: 96px; display: flex; flex-direction: column; gap: 56px; }
+        .sec-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: end; }
+        .sec-head h2 { font-size: clamp(38px, 4.2vw, 60px); line-height: 1.02; }
+        .sec-head-side { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+        .sec-head-side p { font-size: 17px; line-height: 1.6; color: var(--text); }
+        .bento-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        .card { display: flex; flex-direction: column; gap: 28px; padding: 40px; border: 1px solid var(--line); border-radius: 20px; background: var(--ivory); min-width: 0; }
+        .card-wide { grid-column: span 2; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 48px; align-items: center; padding: 48px; }
+        .card-text { display: flex; flex-direction: column; gap: 12px; }
+        .card h3 { font-size: 30px; line-height: 1.1; }
+        .card-wide h3 { font-size: 36px; line-height: 1.08; }
+        .card p { font-size: 15px; line-height: 1.6; color: var(--text); }
+        .card-wide p { font-size: 16px; }
+        .card-visual { position: relative; }
+        .shot { background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px -30px rgba(28,31,42,.3); position: relative; }
+        .shot img { width: 100%; height: 260px; object-fit: cover; object-position: top left; }
+        .tracker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+        .tracker-item { background: var(--card); border: 1px solid var(--line-soft); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .tracker-item img { width: 100%; height: 110px; object-fit: cover; }
+        .tracker-item div { padding: 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+        .tracker-item span:first-child { font-size: 12px; font-weight: 500; }
+        .smart { display: flex; flex-direction: column; gap: 10px; }
+        .smart-url { font-family: var(--mono); font-size: 12px; color: var(--stone); background: var(--card); border: 1px dashed #C9BDA9; border-radius: 10px; padding: 12px 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .smart-item { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line-soft); border-radius: 12px; padding: 12px; }
+        .smart-item img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+        .smart-item div { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .smart-item strong { font-size: 14px; font-weight: 500; }
+        .smart-item small { font-size: 12px; color: var(--stone); }
+        .price { font-family: var(--serif); font-size: 20px; color: var(--burnt); white-space: nowrap; }
+        .card-dark { background: var(--ink); color: var(--ivory); border-color: var(--ink); grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
+        .card-dark p { color: rgba(244,239,230,.78); }
+        .card-dark .label-accent { color: var(--ochre); }
+        .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .split-box { background: var(--ink-2); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+        .split-who { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+        .split-box strong { font-family: var(--serif); font-weight: 400; font-size: 36px; line-height: 1.1; }
+        .split-total { grid-column: span 2; border: 1px dashed rgba(244,239,230,.3); border-radius: 12px; padding: 14px 18px; font-family: var(--mono); font-size: 13px; color: var(--ochre); }
 
-        .features { padding: 6rem 2.5rem; max-width: 1300px; margin: 0 auto; }
-        .feature-row {
-            display: grid;
-            grid-template-columns: 5fr 6fr;
-            gap: 5rem;
-            align-items: center;
-            padding: 5rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .feature-row:first-child { padding-top: 1rem; }
-        .feature-row:last-child { border-bottom: none; }
-        .feature-row.reverse { grid-template-columns: 6fr 5fr; direction: rtl; }
-        .feature-row.reverse > * { direction: ltr; }
-        .feature-num {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.88rem;
-            color: var(--stone);
-            margin-bottom: 1rem;
-            display: flex; align-items: center; gap: 0.7rem;
-        }
-        .feature-num::before {
-            content: ""; width: 32px; height: 1px; background: var(--burnt);
-        }
-        .feature-row h3 {
-            font-size: clamp(2rem, 3.4vw, 2.8rem);
-            line-height: 1.05;
-            letter-spacing: -0.02em;
-            margin-bottom: 1.2rem;
-        }
-        .feature-row h3 .italic { color: var(--burnt); }
-        .feature-row > div > p {
-            font-size: 1.02rem;
-            line-height: 1.6;
-            color: var(--ink-soft);
-            max-width: 480px;
-            margin-bottom: 1.5rem;
-        }
-        .feature-link {
-            display: inline-flex; align-items: center; gap: 0.4rem;
-            font-size: 0.88rem;
-            font-weight: 500;
-            color: var(--burnt);
-            padding-bottom: 2px;
-            border-bottom: 1px solid var(--burnt);
-            transition: gap 0.2s;
-        }
-        .feature-link:hover { gap: 0.7rem; }
-        .feature-visual {
-            background: white;
-            border-radius: 14px;
-            padding: 2rem;
-            box-shadow:
-                0 1px 0 var(--border-soft),
-                0 20px 50px -20px rgba(28, 31, 42, 0.12);
-            min-height: 320px;
-            display: flex; flex-direction: column; justify-content: center;
-            position: relative;
-        }
-        .feature-caption {
-            position: absolute;
-            bottom: -1.8rem;
-            left: 0;
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.78rem;
-            color: var(--stone);
-        }
+        /* Steps */
+        .steps .wrap { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 80px; padding-top: 120px; padding-bottom: 120px; }
+        .steps-intro { display: flex; flex-direction: column; gap: 24px; align-items: flex-start; }
+        .steps-intro h2 { font-size: clamp(38px, 4.2vw, 60px); line-height: 1.02; }
+        .steps-intro p { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 460px; }
+        .steps-cta { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .step { display: flex; flex-direction: column; gap: 12px; padding: 32px 0; border-bottom: 1px solid var(--line); }
+        .step:first-child { padding-top: 0; }
+        .step:last-child { border-bottom: none; padding-bottom: 0; }
+        .step-label { align-self: flex-start; display: inline-flex; align-items: center; gap: 12px; background: var(--ink); color: var(--ivory); font-family: var(--serif); font-style: italic; font-size: 34px; line-height: 1.2; padding: 2px 16px 6px; }
+        .step-label i { width: 14px; height: 14px; display: inline-block; }
+        .step p { font-size: 16px; line-height: 1.6; color: var(--text); max-width: 520px; }
 
-        .visual-tracker { width: 100%; }
-        .tracker-item {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            padding: 0.85rem 0;
-            border-bottom: 1px solid var(--border-soft);
-            font-size: 0.88rem;
-        }
-        .tracker-item:last-child { border-bottom: none; }
-        .tracker-name { font-weight: 500; }
-        .tracker-vendor { font-size: 0.72rem; color: var(--stone); margin-top: 0.1rem; }
+        /* Audiences */
+        .aud .wrap { padding-top: 40px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 24px; }
+        .aud-head { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-bottom: 48px; }
+        .aud-head h2 { font-size: clamp(36px, 3.9vw, 56px); line-height: 1.04; }
+        .aud-head p { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 560px; }
+        .aud-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 96px; align-items: center; padding: 40px 80px; }
+        .aud-row.reverse .aud-visual { order: -1; }
+        .aud-text { display: flex; flex-direction: column; gap: 14px; }
+        .aud-text h3 { font-size: 40px; line-height: 1.08; }
+        .aud-text p { font-size: 16px; line-height: 1.6; color: var(--text); }
+        .aud-visual { position: relative; padding: 24px 0; }
+        .panel { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 30px 60px -30px rgba(28,31,42,.3); }
+        .panel-title { font-family: var(--serif); font-size: 20px; }
+        .vote { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--ivory); border: 2px solid transparent; }
+        .vote.win { border-color: var(--burnt); }
+        .vote img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+        .vote div { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .vote strong { font-size: 14px; font-weight: 500; }
+        .vote small { font-size: 12px; color: var(--stone); }
+        .vote .mono { font-size: 12px; color: var(--stone); white-space: nowrap; }
+        .vote.win .mono { color: var(--burnt-dark); }
+        .panel-img { width: 100%; height: 170px; border-radius: 10px; object-fit: cover; }
+        .bubble { align-self: flex-end; max-width: 260px; background: var(--ink); color: var(--ivory); border-radius: 14px 14px 4px 14px; padding: 10px 14px; font-size: 13px; line-height: 1.4; }
+        .share-url { font-family: var(--mono); font-size: 12px; color: var(--stone); background: var(--ivory); border-radius: 10px; padding: 12px 14px; }
+        .share-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .pill-ro { font-family: var(--mono); font-size: 11px; padding: 4px 8px; border-radius: 99px; background: var(--paper); color: #5B534B; white-space: nowrap; }
+        .fake-btn { align-self: flex-end; background: var(--burnt); color: #FFFDF9; font-size: 13px; font-weight: 500; padding: 10px 16px; border-radius: 999px; }
 
-        .visual-budget { width: 100%; display: flex; flex-direction: column; gap: 1.2rem; }
-        .budget-label-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
-        .budget-label {
-            display: flex; justify-content: space-between;
-            font-size: 0.82rem;
-        }
-        .budget-label .italic { color: var(--stone); font-size: 0.75rem; }
-        .budget-bar {
-            height: 6px;
-            background: var(--paper);
-            border-radius: 100px;
-            overflow: hidden;
-        }
-        .budget-bar-fill {
-            height: 100%;
-            border-radius: 100px;
-        }
-        .budget-total {
-            display: flex; justify-content: space-between; align-items: baseline;
-            padding-top: 1.2rem;
-            border-top: 2px solid var(--ink);
-            margin-top: 0.5rem;
-        }
-        .budget-total-label {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.95rem;
-        }
-        .budget-total-amount {
-            font-family: var(--serif);
-            font-size: 1.7rem;
-            letter-spacing: -0.015em;
-        }
+        /* Guides */
+        .guides .wrap { padding-top: 96px; padding-bottom: 96px; display: flex; flex-direction: column; gap: 40px; }
+        .guides-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+        .guides-head h2 { font-size: clamp(34px, 3.4vw, 48px); line-height: 1.05; margin-top: 12px; }
+        .guides-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+        .guide { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--card); transition: transform .25s, box-shadow .25s; }
+        .guide:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -18px rgba(28,31,42,.2); }
+        .guide-thumb { height: 200px; }
+        .guide-body { padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+        .guide-body .mono { font-size: 11px; color: var(--burnt-dark); letter-spacing: .04em; }
+        .guide-body h3 { font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; }
+        .guide-body small { font-size: 13px; color: var(--stone); }
+        .thumb-a { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .thumb-b { display: flex; align-items: flex-end; gap: 12px; padding: 24px; background: var(--paper); }
+        .thumb-b i { display: block; width: 30%; border-radius: 6px; }
+        .thumb-c { display: flex; align-items: center; justify-content: center; gap: 20px; background: var(--ivory); }
+        .thumb-c i { display: block; width: 70px; height: 70px; border-radius: 50%; }
 
-        .visual-smartlink { width: 100%; }
-        .smartlink-input {
-            background: var(--ivory);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0.85rem 1rem;
-            font-size: 0.78rem;
-            color: var(--stone);
-            font-family: 'SF Mono', Menlo, monospace;
-            margin-bottom: 1rem;
-            display: flex; align-items: center; gap: 0.6rem;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-        .smartlink-arrow {
-            display: flex; justify-content: center;
-            color: var(--burnt);
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .smartlink-arrow::before,
-        .smartlink-arrow::after {
-            content: ""; height: 1px; flex: 1; max-width: 60px;
-            background: var(--burnt); opacity: 0.4;
-        }
-        .smartlink-result {
-            background: var(--ivory);
-            border-radius: 10px;
-            padding: 1rem;
-            display: grid;
-            grid-template-columns: 60px 1fr;
-            gap: 1rem;
-            align-items: center;
-        }
-        .smartlink-thumb {
-            width: 60px; height: 60px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, var(--ochre), var(--burnt));
-            display: flex; align-items: center; justify-content: center;
-        }
-        .smartlink-info-name { font-size: 0.92rem; font-weight: 500; }
-        .smartlink-info-meta { font-size: 0.78rem; color: var(--stone); margin-top: 0.2rem; }
-        .smartlink-info-price { font-family: var(--serif); font-size: 1.1rem; margin-top: 0.4rem; }
+        /* Final CTA */
+        .final .wrap { padding-bottom: 120px; }
+        .final-box { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 56px; align-items: center; padding: 64px; border: 1px solid var(--line); border-radius: 28px; background: var(--card); }
+        .final-text { display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+        .final-text h2 { font-size: clamp(36px, 3.9vw, 56px); line-height: 1.02; }
+        .final .browser img { height: 400px; object-position: top; }
 
-        .guides {
-            padding: 6rem 2.5rem;
-            background: var(--paper);
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-        .guides-inner { max-width: 1280px; margin: 0 auto; }
-        .guides-head {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3rem;
-            margin-bottom: 4rem;
-            align-items: end;
-        }
-        .guides-head-text { max-width: 560px; }
-        .guides-eyebrow {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.9rem;
-            color: var(--burnt);
-            margin-bottom: 0.8rem;
-        }
-        .guides h2 {
-            font-size: clamp(2.2rem, 4.2vw, 3.6rem);
-            line-height: 1.02;
-            letter-spacing: -0.02em;
-            margin-bottom: 1rem;
-        }
-        .guides h2 .italic { color: var(--burnt); }
-        .guides-lede {
-            font-family: var(--serif);
-            font-weight: 300;
-            font-size: 1.05rem;
-            line-height: 1.55;
-            color: var(--ink-soft);
-            max-width: 460px;
-        }
-        .guides-count {
-            font-size: 0.78rem; color: var(--stone);
-            text-align: right;
-            font-family: var(--serif);
-            font-style: italic;
-        }
-        .guides-count strong { color: var(--ink); font-weight: 500; font-style: normal; }
-        .guides-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-        .guide {
-            background: var(--ivory);
-            border-radius: 12px;
-            overflow: hidden;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-            display: flex; flex-direction: column;
-        }
-        .guide:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 15px 40px -15px rgba(28, 31, 42, 0.15);
-        }
-        .guide-thumb {
-            aspect-ratio: 16 / 10;
-            display: flex; align-items: center; justify-content: center;
-            padding: 1.5rem;
-            position: relative;
-        }
-        .guide-thumb svg { max-height: 130px; height: auto; }
-        .guide-number {
-            position: absolute;
-            top: 0.7rem; left: 1rem;
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.75rem;
-            color: var(--stone);
-        }
-        .guide-body { padding: 1.3rem 1.5rem 1.7rem; flex: 1; display: flex; flex-direction: column; }
-        .guide-tag {
-            font-size: 0.66rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: var(--burnt);
-            margin-bottom: 0.6rem;
-        }
-        .guide h3 {
-            font-size: 1.2rem;
-            font-weight: 500;
-            line-height: 1.2;
-            margin-bottom: 0.5rem;
-        }
-        .guide p {
-            font-size: 0.86rem;
-            line-height: 1.5;
-            color: var(--ink-soft);
-            opacity: 0.85;
-            margin-bottom: 1rem;
-            flex: 1;
-        }
-        .guide-meta {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.78rem;
-            color: var(--stone);
-        }
+        /* Footer */
+        footer { background: var(--ink); color: var(--ivory); }
+        footer .wrap { padding-top: 72px; padding-bottom: 40px; display: flex; flex-direction: column; gap: 56px; }
+        .foot-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 48px; }
+        .foot-brand { display: flex; flex-direction: column; gap: 16px; }
+        .foot-brand .logo { font-size: 32px; }
+        .foot-brand .logo span { color: var(--ochre); }
+        .foot-brand p { font-size: 14px; line-height: 1.6; color: rgba(244,239,230,.72); max-width: 340px; }
+        .foot-col { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
+        .foot-col .mono { font-size: 12px; color: var(--ochre); }
+        .foot-col a { color: rgba(244,239,230,.75); }
+        .foot-col a:hover { color: var(--ochre); }
+        .foot-bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 24px; border-top: 1px solid #3A3D4A; font-size: 13px; color: rgba(244,239,230,.62); }
+        .foot-bottom em { font-family: var(--serif); color: var(--ochre); }
 
-        .for-who { padding: 6rem 2.5rem; max-width: 1300px; margin: 0 auto; }
-        .for-who-head { text-align: center; max-width: 680px; margin: 0 auto 4rem; }
-        .for-who-eyebrow {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.9rem;
-            color: var(--burnt);
-            margin-bottom: 0.8rem;
+        /* Responsive */
+        @media (max-width: 1180px) {
+            :root { --pad: 56px; }
+            .aud-row { padding: 32px 0; gap: 64px; }
         }
-        .for-who h2 {
-            font-size: clamp(2rem, 3.8vw, 3.2rem);
-            line-height: 1.05;
-            margin-bottom: 1.2rem;
-        }
-        .for-who h2 .italic { color: var(--burnt); }
-        .for-who-lede {
-            font-family: var(--serif);
-            font-weight: 300;
-            font-size: 1.1rem;
-            color: var(--ink-soft);
-            line-height: 1.55;
-        }
-        .who-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-        }
-        .who {
-            padding: 2rem 1.8rem;
-            background: white;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-        }
-        .who-num {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.78rem;
-            color: var(--burnt);
-            margin-bottom: 1rem;
-        }
-        .who-heading {
-            font-size: 1.15rem;
-            font-weight: 500;
-            margin-bottom: 0.7rem;
-        }
-        .who p {
-            font-size: 0.86rem;
-            color: var(--ink-soft);
-            line-height: 1.55;
-            opacity: 0.85;
-        }
-
-        .end {
-            padding: 7rem 2.5rem;
-            text-align: center;
-            background:
-                radial-gradient(ellipse at 50% 0%, rgba(184, 85, 58, 0.08), transparent 60%),
-                var(--ivory);
-        }
-        .end-inner { max-width: 780px; margin: 0 auto; }
-        .end-eyebrow {
-            font-family: var(--serif);
-            font-style: italic;
-            color: var(--burnt);
-            font-size: 0.95rem;
-            margin-bottom: 1rem;
-        }
-        .end h2 {
-            font-size: clamp(2.4rem, 5vw, 4.2rem);
-            line-height: 1;
-            letter-spacing: -0.025em;
-            margin-bottom: 1.4rem;
-        }
-        .end h2 .italic { color: var(--burnt); }
-        .end p {
-            font-family: var(--serif);
-            font-weight: 300;
-            font-size: 1.2rem;
-            color: var(--ink-soft);
-            line-height: 1.5;
-            max-width: 540px;
-            margin: 0 auto 2.5rem;
-        }
-        .end-meta {
-            margin-top: 1.5rem;
-            font-size: 0.82rem;
-            color: var(--stone);
-            font-family: var(--serif);
-            font-style: italic;
-        }
-
-        footer {
-            background: var(--ink);
-            color: rgba(244, 239, 230, 0.7);
-            padding: 4rem 2.5rem 2rem;
-        }
-        .footer-grid {
-            max-width: 1280px; margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1.6fr 1fr 1fr 1fr;
-            gap: 3rem;
-            margin-bottom: 3rem;
-        }
-        .footer-brand .nav-logo { color: var(--ivory); }
-        .footer-brand p {
-            margin: 1rem 0 1.2rem;
-            font-size: 0.88rem;
-            line-height: 1.6;
-            max-width: 340px;
-            color: rgba(244, 239, 230, 0.6);
-        }
-        .footer-brand small {
-            font-family: var(--serif);
-            font-style: italic;
-            font-size: 0.78rem;
-            color: var(--ochre);
-        }
-        .footer-heading {
-            font-family: var(--serif);
-            font-size: 1rem;
-            font-weight: 500;
-            color: var(--ivory);
-            margin-bottom: 1.1rem;
-        }
-        .footer-col ul { list-style: none; }
-        .footer-col li { margin-bottom: 0.6rem; }
-        .footer-col a {
-            font-size: 0.85rem;
-            color: rgba(244, 239, 230, 0.55);
-            transition: color 0.15s;
-        }
-        .footer-col a:hover { color: var(--ochre); }
-        .footer-bottom {
-            max-width: 1280px; margin: 0 auto;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(244, 239, 230, 0.1);
-            display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
-            font-size: 0.78rem;
-            color: rgba(244, 239, 230, 0.45);
-        }
-        .footer-bottom em {
-            font-family: var(--serif);
-            font-style: italic;
-            color: var(--ochre);
-        }
-
         @media (max-width: 980px) {
-            .hero-grid { grid-template-columns: 1fr; gap: 3.5rem; }
-            .process-head { grid-template-columns: 1fr; gap: 2rem; }
-            .process-steps { grid-template-columns: repeat(2, 1fr); }
-            .step { border-left: none; border-top: 1px solid rgba(244,239,230,0.12); padding: 1.8rem 0 1.8rem; }
-            .step:nth-child(odd) { padding-right: 1.2rem; }
-            .step:nth-child(even) { padding-left: 1.2rem; border-left: 1px solid rgba(244,239,230,0.12); }
-            .step:nth-child(-n+2) { border-top: none; padding-top: 0.5rem; }
-            .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 2.5rem; padding: 4rem 0; direction: ltr; }
-            .guides-head { grid-template-columns: 1fr; }
-            .guides-count { text-align: left; }
-            .guides-grid { grid-template-columns: repeat(2, 1fr); }
-            .who-grid { grid-template-columns: repeat(2, 1fr); }
-            .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+            :root { --pad: 32px; }
+            .nav-links { display: none; }
+            .hero .wrap { grid-template-columns: 1fr; gap: 56px; padding-top: 64px; }
+            .hero-visual { max-width: 620px; width: 100%; }
+            .brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .brand-grid div:nth-child(3) { border-right: none; }
+            .brand-grid div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+            .sec-head, .steps .wrap, .final-box { grid-template-columns: 1fr; gap: 32px; }
+            .bento-grid { grid-template-columns: 1fr; }
+            .card-wide { grid-column: auto; grid-template-columns: 1fr; gap: 32px; padding: 40px; }
+            .card-dark .split { order: 2; }
+            .aud-row { grid-template-columns: 1fr; gap: 24px; }
+            .aud-row.reverse .aud-visual { order: 0; }
+            .guides-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .final-box { padding: 40px; }
         }
         @media (max-width: 640px) {
-            .nav { grid-template-columns: 1fr auto; padding: 0.9rem 1.2rem; gap: 1rem; }
-            .nav-left { display: none; }
-            .nav-right { gap: 0.9rem; }
-            .nav-right a:not(.nav-cta) { display: none; }
-            .hero { padding: 3rem 1.2rem 4rem; }
-            .hero h1 { font-size: 2.5rem; }
-            .hero-lede { font-size: 1.02rem; }
-            .hero-foot { flex-wrap: wrap; gap: 1.2rem; }
-            .demo { padding: 1.2rem; }
-            .demo-head { flex-wrap: wrap; gap: 0.5rem; }
-            .demo-item { grid-template-columns: 32px 1fr auto; gap: 0.6rem; padding: 0.6rem 0.7rem; }
-            .demo-item .demo-status { grid-column: 2 / -1; justify-self: start; margin-top: 0.2rem; }
-            .process { padding: 4rem 1.2rem; }
-            .process-steps { grid-template-columns: 1fr; }
-            .step, .step:nth-child(odd), .step:nth-child(even) {
-                border-left: none !important;
-                border-top: 1px solid rgba(244,239,230,0.12);
-                padding: 1.8rem 0;
-            }
-            .step:first-child { border-top: none; padding-top: 0.5rem; }
-            .features { padding: 3rem 1.2rem; }
-            .feature-row { padding: 3rem 0; gap: 2rem; }
-            .feature-visual { padding: 1.5rem; }
-            .guides, .for-who { padding: 4rem 1.2rem; }
+            :root { --pad: 20px; }
+            body { background-size: 24px 24px; }
+            .nav .wrap { padding-top: 12px; padding-bottom: 12px; }
+            .nav-login { display: none; }
+            .nav-right .btn { font-size: 13px; padding: 11px 16px; }
+            .logo { font-size: 24px; }
+            .hero .wrap { padding-top: 44px; padding-bottom: 56px; gap: 40px; }
+            .hero h1 { font-size: 48px; line-height: 1; }
+            .hero-lede { font-size: 16px; }
+            .hero-text .btn-lg { width: 100%; font-size: 15px; padding: 16px 20px; text-align: center; }
+            .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+            .hero-stats strong { font-size: 19px; }
+            .hero-stats span { font-size: 10.5px; line-height: 1.35; }
+            .price { font-size: 17px; }
+            .hero-visual { height: 470px; }
+            .hv-browser { top: 0; width: 100%; }
+            .hv-browser img { height: 260px; }
+            .hv-phone { width: 150px; height: 330px; bottom: 0; right: 4px; border-radius: 28px; padding: 7px; }
+            .hv-phone .phone-screen { border-radius: 22px; }
+            .hv-note { top: 300px; left: 0; width: 190px; font-size: 12px; padding: 12px 14px; }
+            .hv-split { display: none; }
+            .shape-hide-m { display: none; }
+            .brands .wrap { padding-bottom: 56px; }
+            .brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .brand-grid div { font-size: 17px; padding: 18px 6px; border-bottom: 1px solid var(--line); }
+            .brand-grid div:nth-child(3) { border-right: 1px solid var(--line); }
+            .brand-grid div:nth-child(2n) { border-right: none; }
+            .brand-grid div:nth-child(n+5) { border-bottom: none; }
+            .bento .wrap, .guides .wrap { padding-top: 56px; padding-bottom: 56px; gap: 32px; }
+            .card, .card-wide { padding: 24px; gap: 20px; border-radius: 18px; }
+            .card h3, .card-wide h3 { font-size: 26px; }
+            .shot img { height: 190px; }
+            .tracker { gap: 6px; }
+            .tracker-item img { height: 72px; }
+            .tracker-item div { padding: 6px; }
+            .tracker-item span:first-child { font-size: 10px; }
+            .tracker .st { font-size: 7px; padding: 3px 4px; }
+            .smart-item img { width: 56px; height: 56px; }
+            .split { gap: 10px; }
+            .split-box { padding: 14px; }
+            .split-box strong { font-size: 24px; }
+            .split-total { font-size: 12px; }
+            .steps .wrap { padding-top: 64px; padding-bottom: 64px; }
+            .step { padding: 20px 0; }
+            .step-label { font-size: 26px; }
+            .aud .wrap { padding-top: 0; padding-bottom: 64px; }
+            .aud-head { padding-bottom: 8px; }
+            .aud-text h3 { font-size: 30px; }
+            .aud-visual { padding: 8px 0; }
+            .panel { padding: 18px; }
             .guides-grid { grid-template-columns: 1fr; }
-            .who-grid { grid-template-columns: 1fr; }
-            .end { padding: 5rem 1.2rem; }
-            .end h2 { font-size: 2.4rem; }
-            .end p { font-size: 1.02rem; }
-            footer { padding: 3rem 1.2rem 2rem; }
-            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
-            .footer-bottom { flex-direction: column; text-align: center; }
+            .guide-thumb { height: 130px; }
+            .final .wrap { padding-bottom: 56px; }
+            .final-box { padding: 24px; border-radius: 22px; }
+            .final .browser img { height: 300px; }
+            .final-text .btn { width: 100%; }
+            .foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+            .foot-brand { grid-column: span 2; }
         }
     </style>
 
@@ -883,585 +411,273 @@
 </head>
 <body>
 
-    <nav class="nav">
-        <div class="nav-left">— Édition mai 2026</div>
-        <a href="/" class="nav-logo">cocon<span>.</span></a>
-        <div class="nav-right">
-            <a href="#process">Comment ça marche</a>
-            <a href="#features">Fonctionnalités</a>
-            <a href="#guides">Guides</a>
-            <a href="/app" class="nav-cta">Ouvrir mon projet</a>
+    <header class="nav">
+        <div class="wrap">
+            <div class="nav-left">
+                <a href="/" class="logo" aria-label="Cocon, accueil">cocon<span>.</span></a>
+                <nav class="nav-links" aria-label="Navigation principale">
+                    <a href="#features">Fonctionnalités</a>
+                    <a href="#process">Comment ça marche</a>
+                    <a href="/blog">Guides</a>
+                </nav>
+            </div>
+            <div class="nav-right">
+                <a href="/app" class="nav-login">Se connecter</a>
+                <a href="/app" class="btn btn-ink">Ouvrir mon projet <span class="arrow">→</span></a>
+            </div>
         </div>
-    </nav>
+    </header>
 
-    <section class="hero">
-        <div class="hero-grid">
-            <div>
-                <div class="hero-eyebrow">Votre projet déco</div>
-                <h1>Votre intérieur <span class="accent">voit le jour</span> ici.</h1>
-                <p class="hero-lede">
-                    Cocon réunit vos inspirations, vos produits et vos matériaux au même endroit. Vous suivez votre budget en temps réel, à plusieurs s'il le faut, et vous organisez tout à votre rythme.
-                </p>
-                <div class="hero-actions">
-                    <a href="/app" class="btn btn-primary">Ouvrir mon projet <span class="btn-arrow">→</span></a>
-                    <a href="#process" class="btn btn-ghost">Découvrir Cocon</a>
-                </div>
-                <div class="hero-foot">
-                    <div class="hero-foot-item">
-                        <strong>2 min</strong>
-                        <span>pour démarrer</span>
+    <main>
+        <section class="hero">
+            <div class="wrap">
+                <div class="hero-text">
+                    <div class="eyebrow">Le Tricount de la déco</div>
+                    <h1>Votre intérieur <span class="it">voit le jour</span> ici.</h1>
+                    <p class="hero-lede">Inspirations, produits, budget et livraisons réunis dans un seul espace. Vous savez à tout moment ce que vous avez choisi, ce qui arrive et ce que ça coûte, seul ou à plusieurs.</p>
+                    <div><a href="/app" class="btn btn-accent btn-lg">Lancez-vous dans l'organisation de vos travaux <span class="arrow">→</span></a></div>
+                    <div class="hero-stats">
+                        <div><strong>2 min</strong><span>pour créer un projet</span></div>
+                        <div><strong>4 statuts</strong><span>de l'envie à l'installation</span></div>
+                        <div><strong>119 marques</strong><span>dans 8 univers</span></div>
                     </div>
-                    <div class="hero-foot-item">
-                        <strong>130 marques</strong>
-                        <span>intégrées</span>
+                </div>
+
+                <div class="hero-visual" aria-hidden="false">
+                    <div class="shape shape-hide-m" style="top: 40px; right: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--ochre);"></div>
+                    <div class="shape shape-hide-m" style="bottom: 70px; right: 210px; width: 40px; height: 40px; background: var(--burnt); transform: rotate(18deg);"></div>
+                    <div class="shape shape-hide-m" style="top: 120px; left: -30px; width: 22px; height: 22px; background: var(--ink); transform: rotate(45deg);"></div>
+
+                    <div class="browser hv-browser">
+                        <div class="browser-bar"><i></i><i></i><i></i><span>cocon-app.fr/app</span></div>
+                        <img src="/img/home/app-moodboard-salon.webp" width="1000" height="790" alt="Moodboard du salon dans Cocon, avec photos d'intérieur et mobilier" fetchpriority="high">
+                    </div>
+                    <div class="phone hv-phone">
+                        <div class="phone-screen"><img src="/img/home/app-mobile-projet.webp" width="251" height="740" alt="Écran mobile de Cocon : budget total du projet et liste des pièces"></div>
+                    </div>
+                    <div class="note note-dark hv-note"><span class="mono">LIVRAISON DU JOUR</span><span>L'étagère pomme est arrivée. Elle passe en <span style="color: var(--ochre);">Livré</span>.</span></div>
+                    <div class="note note-light hv-split"><span class="mono">ÉQUILIBRE</span><span>Camille doit <strong>290 €</strong> à Alex</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="brands" aria-label="Marques">
+            <div class="wrap">
+                <p class="label">119 marques sélectionnées dans 8 univers, à explorer depuis votre projet</p>
+                <div class="brand-grid">
+                    <div>Tikamoon</div>
+                    <div>Selency</div>
+                    <div>AM.PM</div>
+                    <div>Westwing</div>
+                    <div>Bulthaup</div>
+                    <div>+ 114 autres</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bento" id="features">
+            <div class="wrap">
+                <div class="sec-head">
+                    <h2>Tout votre projet, <span class="it">au même endroit</span>.</h2>
+                    <div class="sec-head-side">
+                        <p>Pinterest pour les idées, Excel pour le budget, WhatsApp pour décider. Cocon remplace les trois par un seul espace, pensé pour les projets déco et rénovation.</p>
+                        <a href="#process" class="link-box">Voir comment ça marche →</a>
+                    </div>
+                </div>
+
+                <div class="bento-grid">
+                    <article class="card card-wide">
+                        <div class="card-text">
+                            <span class="label-accent">01. Budget en temps réel</span>
+                            <h3>Un budget qui se tient tout seul.</h3>
+                            <p>Chaque produit ajouté met à jour le total, par pièce et au global. Vous voyez tôt où ralentir, bien avant la facture finale.</p>
+                            <a href="/blog/budget-renovation-appartement" class="link-line" style="align-self: flex-start;">Combien prévoir au mètre carré</a>
+                        </div>
+                        <div class="card-visual">
+                            <div class="shape" style="top: -14px; right: 24px; width: 36px; height: 36px; background: var(--ochre); transform: rotate(20deg); z-index: 1;"></div>
+                            <div class="shot"><img src="/img/home/app-budget.webp" width="1400" height="567" loading="lazy" alt="Tableau de bord Budget et Dépenses de Cocon : budget total, dépensé, restant et avancement global"></div>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-text">
+                            <span class="label-accent">02. Suivi des achats</span>
+                            <h3>Du repérage à l'installation.</h3>
+                            <p>Chaque article avance d'un statut à l'autre. Vous voyez d'un coup d'œil ce qui reste à acheter et ce qui est en route.</p>
+                        </div>
+                        <div class="tracker">
+                            <div class="tracker-item"><img src="/img/home/produit-applique-lune.webp" width="480" height="574" loading="lazy" alt="Applique murale en forme de lune"><div><span>Applique lune</span><span class="st st-envie">ENVIE</span></div></div>
+                            <div class="tracker-item"><img src="/img/home/produit-suspension.webp" width="480" height="437" loading="lazy" alt="Suspension plissée transparente"><div><span>Suspension plissée</span><span class="st st-commande">COMMANDÉ</span></div></div>
+                            <div class="tracker-item"><img src="/img/home/produit-etagere-pomme.webp" width="258" height="375" loading="lazy" alt="Étagère murale en rotin en forme de pomme"><div><span>Étagère pomme</span><span class="st st-livre">LIVRÉ</span></div></div>
+                            <div class="tracker-item"><img src="/img/home/produit-fauteuil-ourson.webp" width="480" height="443" loading="lazy" alt="Fauteuil enfant ourson en bouclette"><div><span>Fauteuil ourson</span><span class="st st-installe">INSTALLÉ</span></div></div>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-text">
+                            <span class="label-accent">03. Smart Link</span>
+                            <h3>Un lien collé, et tout est rempli.</h3>
+                            <p>Nom, prix et photo sont récupérés automatiquement. Fini les onglets oubliés et les captures d'écran.</p>
+                        </div>
+                        <div class="smart">
+                            <div class="smart-url">tikamoon.com/art-meuble-salle-de-bain-noyer-moon-80</div>
+                            <div class="smart-item">
+                                <img src="/img/home/produit-meuble-vasque.webp" width="480" height="480" loading="lazy" alt="Meuble de salle de bain en noyer massif et terrazzo">
+                                <div><strong>Meuble vasque noyer Moon 80 cm</strong><small>Tikamoon, Salle de bain</small></div>
+                                <span class="price">1 099 €</span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card card-wide card-dark">
+                        <div class="split">
+                            <div class="split-box"><div class="split-who"><span class="avatar" style="background: var(--burnt);">A</span>Alex a payé</div><strong>2 450 €</strong></div>
+                            <div class="split-box"><div class="split-who"><span class="avatar" style="background: var(--ochre); color: var(--ink);">C</span>Camille a payé</div><strong>1 870 €</strong></div>
+                            <div class="split-total">Pour équilibrer, Camille doit 290 € à Alex</div>
+                        </div>
+                        <div class="card-text">
+                            <span class="label-accent">04. À plusieurs</span>
+                            <h3>Qui a payé quoi, <span class="it-ochre">sans tableur</span>.</h3>
+                            <p>Partagez le projet avec votre conjoint, votre décoratrice ou votre artisan. Chacun voit, commente et vote. Les comptes s'équilibrent tout seuls.</p>
+                            <a href="/blog/tricount-renovation-deco" class="link-line" style="align-self: flex-start; border-color: var(--ivory);">Le Tricount de la rénovation</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="steps" id="process">
+            <div class="wrap">
+                <div class="steps-intro">
+                    <span class="tag">Prise en main en 2 minutes</span>
+                    <h2>De la première envie à la dernière livraison.</h2>
+                    <p>Créez un projet, ajoutez vos pièces, et avancez à votre rythme. Cocon suit tout le reste.</p>
+                    <div class="steps-cta">
+                        <a href="/app" class="btn btn-ink">Ouvrir mon projet <span class="arrow">→</span></a>
+                        <a href="/blog/organiser-renovation-appartement" class="link-line">Organiser sa rénovation</a>
+                    </div>
+                </div>
+                <ol style="list-style: none;">
+                    <li class="step"><span class="step-label"><i style="background: var(--burnt);"></i>rassembler</span><p>Photos d'inspiration, couleurs, produits repérés. Tout se range pièce par pièce.</p></li>
+                    <li class="step"><span class="step-label"><i style="background: var(--ochre);"></i>suivre</span><p>Chaque article passe d'Envie à Commandé, Livré puis Installé. Vous savez toujours où vous en êtes.</p></li>
+                    <li class="step"><span class="step-label"><i style="background: var(--burnt); border-radius: 50%;"></i>maîtriser</span><p>Le budget se recalcule à chaque ajout, par pièce et au global.</p></li>
+                    <li class="step"><span class="step-label"><i style="background: var(--ochre); border-radius: 50%;"></i>partager</span><p>Un lien suffit. Vos proches voient, commentent et votent, sans créer de compte.</p></li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="aud">
+            <div class="wrap">
+                <div class="aud-head">
+                    <h2>Pensé pour tous ceux <span class="it">qui s'en mêlent</span>.</h2>
+                    <p>Un studio à rafraîchir ou une maison entière à rénover. Cocon s'adapte à la taille du projet et au nombre de personnes embarquées.</p>
+                </div>
+
+                <div class="aud-row">
+                    <div class="aud-text">
+                        <span class="label">Couples</span>
+                        <h3>Trancher sans débat sans fin.</h3>
+                        <p>Fini les captures perdues dans WhatsApp. Les options sont côte à côte, chacun vote, et la décision reste dans le projet.</p>
+                    </div>
+                    <div class="aud-visual">
+                        <div class="shape shape-hide-m" style="top: 0; right: 30px; width: 56px; height: 56px; border-radius: 50%; background: var(--ochre);"></div>
+                        <div class="panel">
+                            <span class="panel-title">Quelle lumière pour la chambre enfant ?</span>
+                            <div class="vote win"><img src="/img/home/produit-applique-lune.webp" width="480" height="574" loading="lazy" alt="Applique lune"><div><strong>Applique lune</strong><small>Chambre enfant</small></div><span class="mono">2 votes</span></div>
+                            <div class="vote"><img src="/img/home/produit-suspension.webp" width="480" height="437" loading="lazy" alt="Suspension plissée"><div><strong>Suspension plissée</strong><small>Chambre enfant</small></div><span class="mono">0 vote</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aud-row reverse">
+                    <div class="aud-text">
+                        <span class="label">Décorateurs</span>
+                        <h3>Des propositions qui se commentent.</h3>
+                        <p>Présentez vos choix pièce par pièce. Vos clients réagissent directement dans le projet, sans aller-retour par mail.</p>
+                    </div>
+                    <div class="aud-visual">
+                        <div class="shape shape-hide-m" style="bottom: 0; left: -14px; width: 40px; height: 40px; background: var(--burnt); transform: rotate(-14deg);"></div>
+                        <div class="panel">
+                            <span class="label">PROPOSITION TEXTILES, V2</span>
+                            <img class="panel-img" src="/img/home/app-moodboard-textiles.webp" width="1000" height="547" loading="lazy" alt="Moodboard textiles dans Cocon : rideaux en lin, panier en fibre, voilage et papier peint">
+                            <div class="bubble">On garde le lin, on tente le rose ?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aud-row">
+                    <div class="aud-text">
+                        <span class="label">Rénovateurs</span>
+                        <h3>Devis, matériaux et artisans alignés.</h3>
+                        <p>Centralisez vos choix de matériaux et partagez un lien en lecture seule avec les artisans qui interviennent chez vous.</p>
+                    </div>
+                    <div class="aud-visual">
+                        <div class="shape shape-hide-m" style="top: 0; right: 30px; width: 26px; height: 26px; background: var(--ink); transform: rotate(45deg);"></div>
+                        <div class="panel">
+                            <div class="share-row"><span class="panel-title">Partager le projet</span><span class="pill-ro">LECTURE SEULE</span></div>
+                            <div class="share-url">cocon-app.fr/p/belleville-51</div>
+                            <span class="fake-btn">Copier le lien</span>
+                        </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="demo">
-                <div class="demo-head">
+        <section class="guides bento" id="guides">
+            <div class="wrap">
+                <div class="guides-head">
                     <div>
-                        <div class="demo-title">Appartement Lourmel <em>· 51 m²</em></div>
+                        <span class="label">Guides pratiques</span>
+                        <h2>Pour décider <span class="it">sereinement</span>.</h2>
                     </div>
-                    <div class="demo-budget">
-                        <div class="demo-budget-amount">4 850 €</div>
-                        <div class="demo-budget-label">Salon</div>
-                    </div>
+                    <a href="/blog" class="link-box">Tous les guides →</a>
                 </div>
-                <div class="demo-rooms">
-                    <span class="demo-room active">Salon</span>
-                    <span class="demo-room">Cuisine</span>
-                    <span class="demo-room">Chambre</span>
-                    <span class="demo-room">SDB</span>
+                <div class="guides-grid">
+                    <a href="/blog/budget-renovation-appartement" class="guide">
+                        <div class="guide-thumb thumb-a" aria-hidden="true"><i style="background: var(--burnt);"></i><i style="background: var(--ochre);"></i><i style="background: var(--paper);"></i></div>
+                        <div class="guide-body"><span class="mono">BUDGET</span><h3>Budget rénovation appartement : combien prévoir au m²</h3><small>10 min de lecture</small></div>
+                    </a>
+                    <a href="/blog/organiser-renovation-appartement" class="guide">
+                        <div class="guide-thumb thumb-b" aria-hidden="true"><i style="height: 60%; background: var(--ink);"></i><i style="height: 85%; background: #8E8378;"></i><i style="height: 40%; background: var(--burnt);"></i></div>
+                        <div class="guide-body"><span class="mono">GUIDE COMPLET</span><h3>Organiser sa rénovation d'appartement, étape par étape</h3><small>8 min de lecture</small></div>
+                    </a>
+                    <a href="/blog/tricount-renovation-deco" class="guide">
+                        <div class="guide-thumb thumb-c" aria-hidden="true"><i style="background: var(--burnt);"></i><i style="background: var(--ochre);"></i><i style="background: var(--ink);"></i></div>
+                        <div class="guide-body"><span class="mono">BUDGET PARTAGÉ</span><h3>Tricount déco : suivre les dépenses à deux</h3><small>6 min de lecture</small></div>
+                    </a>
                 </div>
-                <div class="demo-list">
-                    <div class="demo-item">
-                        <div class="demo-thumb" style="background: linear-gradient(135deg, #D4A574, #B8553A);">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M5 18v3M19 18v3M7 10V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v3"/></svg>
-                        </div>
-                        <div>
-                            <div class="demo-item-name">Fauteuil Oslo</div>
-                            <div class="demo-item-vendor">Maisons du Monde</div>
-                        </div>
-                        <div class="demo-item-price">890 €</div>
-                        <div class="demo-status status-livre">Livré</div>
+            </div>
+        </section>
+
+        <section class="final">
+            <div class="wrap" style="padding-top: 120px;">
+                <div class="final-box">
+                    <div class="final-text">
+                        <span class="tag">Votre projet vous attend</span>
+                        <h2>Posez votre projet, <span class="it">on s'occupe du reste</span>.</h2>
+                        <a href="/app" class="btn btn-accent btn-lg">Ouvrir mon projet <span class="arrow">→</span></a>
                     </div>
-                    <div class="demo-item">
-                        <div class="demo-thumb" style="background: linear-gradient(135deg, #8E8378, #2D3142);">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 2v18M5 8l7-6 7 6M8 14h8"/></svg>
-                        </div>
-                        <div>
-                            <div class="demo-item-name">Lampadaire Arc</div>
-                            <div class="demo-item-vendor">La Redoute</div>
-                        </div>
-                        <div class="demo-item-price">245 €</div>
-                        <div class="demo-status status-commande">Commandé</div>
-                    </div>
-                    <div class="demo-item">
-                        <div class="demo-thumb" style="background: linear-gradient(135deg, #ECE5D8, #C4A882);">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1C1F2A" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
-                        </div>
-                        <div>
-                            <div class="demo-item-name">Tapis Berbère 200×290</div>
-                            <div class="demo-item-vendor">AM.PM</div>
-                        </div>
-                        <div class="demo-item-price">320 €</div>
-                        <div class="demo-status status-envie">Envie</div>
-                    </div>
-                    <div class="demo-item">
-                        <div class="demo-thumb" style="background: linear-gradient(135deg, #B8AFA3, #8E8378);">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
-                        </div>
-                        <div>
-                            <div class="demo-item-name">Suspension laiton</div>
-                            <div class="demo-item-vendor">Habitat</div>
-                        </div>
-                        <div class="demo-item-price">189 €</div>
-                        <div class="demo-status status-installe">Installé</div>
+                    <div class="browser">
+                        <div class="browser-bar"><i></i><i></i><i></i><span>cocon-app.fr/app, Salle de bain</span></div>
+                        <img src="/img/home/app-salle-de-bain.webp" width="825" height="870" loading="lazy" alt="Pièce Salle de bain dans Cocon : cartes produits avec photo, prix, enseigne et votes">
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="process" id="process">
-        <div class="process-inner">
-            <div class="process-head">
-                <div>
-                    <div class="process-eyebrow">Comment ça marche</div>
-                    <h2>De la première <span class="italic">envie</span><br>à la dernière livraison.</h2>
-                </div>
-                <p class="process-lede">
-                    Cocon vous accompagne sur toute la durée du projet. Vos envies, bien sûr, mais aussi ce que vous achetez, ce que vous recevez et ce que tout cela vous coûte vraiment.
-                </p>
-            </div>
-
-            <div class="process-steps">
-                <div class="step">
-                    <div class="step-num">i.</div>
-                    <h3>Rassemblez vos envies</h3>
-                    <p>Photos d'inspiration, couleurs, produits repérés. Tout se range pièce par pièce, et tout se retrouve quand vous en avez besoin.</p>
-                </div>
-                <div class="step">
-                    <div class="step-num">ii.</div>
-                    <h3>Suivez vos commandes</h3>
-                    <p>Chaque article avance dans votre projet, de l'envie à l'installation. Vous savez toujours où vous en êtes.</p>
-                </div>
-                <div class="step">
-                    <div class="step-num">iii.</div>
-                    <h3>Gardez l'œil sur le budget</h3>
-                    <p>Le total se met à jour à chaque ajout, par pièce et au global. Si vous êtes plusieurs, chacun voit qui a payé quoi.</p>
-                </div>
-                <div class="step">
-                    <div class="step-num">iv.</div>
-                    <h3>Partagez avec vos proches</h3>
-                    <p>Un lien à votre conjoint, à votre décoratrice ou à votre artisan. Ils peuvent voir, commenter, voter. Aucun compte à créer.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="features" id="features">
-
-        <div class="feature-row">
-            <div>
-                <div class="feature-num">No. 01 — Budget en temps réel</div>
-                <h3>Votre budget se met à jour, <span class="italic">sans le moindre tableur</span>.</h3>
-                <p>
-                    Chaque produit a son prix. Cocon fait la somme au fur et à mesure, par pièce et au global. Vous décidez tôt où ralentir et où vous faire plaisir, bien avant que la facture finale n'arrive. Et si vous êtes plusieurs sur le projet, chacun voit qui a payé quoi.
-                </p>
-                <a href="/blog/budget-renovation-appartement" class="feature-link">Combien prévoir au mètre carré</a>
-            </div>
-            <div class="feature-visual">
-                <div class="visual-budget">
-                    <div class="budget-label-wrap">
-                        <div class="budget-label"><span>Salon</span><span class="italic">68 %</span></div>
-                        <div class="budget-bar"><div class="budget-bar-fill" style="width: 68%; background: #B8553A;"></div></div>
-                    </div>
-                    <div class="budget-label-wrap">
-                        <div class="budget-label"><span>Cuisine</span><span class="italic">42 %</span></div>
-                        <div class="budget-bar"><div class="budget-bar-fill" style="width: 42%; background: #D4A574;"></div></div>
-                    </div>
-                    <div class="budget-label-wrap">
-                        <div class="budget-label"><span>Chambre</span><span class="italic">23 %</span></div>
-                        <div class="budget-bar"><div class="budget-bar-fill" style="width: 23%; background: #8E8378;"></div></div>
-                    </div>
-                    <div class="budget-total">
-                        <span class="budget-total-label">Total dépensé</span>
-                        <span class="budget-total-amount">8 740 €</span>
-                    </div>
-                </div>
-                <div class="feature-caption">Par pièce et au global, toujours à jour.</div>
-            </div>
-        </div>
-
-        <div class="feature-row reverse">
-            <div>
-                <div class="feature-num">No. 02 — Suivi des achats</div>
-                <h3>Du repérage à <span class="italic">l'installation</span>, chaque article a sa trajectoire.</h3>
-                <p>
-                    Vos coups de cœur ne restent pas figés dans un tableau Pinterest. Chaque produit avance dans votre projet, du moment où vous le repérez jusqu'au jour où il est installé chez vous. Vous voyez en un coup d'œil ce qu'il reste à acheter et ce qui est en route.
-                </p>
-                <a href="/blog/organiser-renovation-appartement" class="feature-link">Comment organiser sa rénovation</a>
-            </div>
-            <div class="feature-visual">
-                <div class="visual-tracker">
-                    <div class="tracker-item">
-                        <div>
-                            <div class="tracker-name">Canapé Söderhamn</div>
-                            <div class="tracker-vendor">IKEA · Salon</div>
-                        </div>
-                        <div class="demo-status status-livre">Livré</div>
-                    </div>
-                    <div class="tracker-item">
-                        <div>
-                            <div class="tracker-name">Table basse Mango</div>
-                            <div class="tracker-vendor">La Redoute · Salon</div>
-                        </div>
-                        <div class="demo-status status-commande">Commandé</div>
-                    </div>
-                    <div class="tracker-item">
-                        <div>
-                            <div class="tracker-name">Suspension cannage</div>
-                            <div class="tracker-vendor">Maisons du Monde · Salle à manger</div>
-                        </div>
-                        <div class="demo-status status-installe">Installé</div>
-                    </div>
-                    <div class="tracker-item">
-                        <div>
-                            <div class="tracker-name">Tapis berbère</div>
-                            <div class="tracker-vendor">AM.PM · Salon</div>
-                        </div>
-                        <div class="demo-status status-envie">Envie</div>
-                    </div>
-                </div>
-                <div class="feature-caption">Quatre étapes, un seul fil conducteur.</div>
-            </div>
-        </div>
-
-        <div class="feature-row">
-            <div>
-                <div class="feature-num">No. 03 — Smart Link</div>
-                <h3>Un lien collé, <span class="italic">et tout est rempli</span>.</h3>
-                <p>
-                    Copiez l'URL d'un produit IKEA, La Redoute, AM.PM ou Maisons du Monde. Cocon récupère le nom, le prix et la photo. Plus de copier-coller, plus d'onglets oubliés. Une trentaine d'enseignes sont reconnues.
-                </p>
-                <a href="/blog/moodboard-deco-gratuit" class="feature-link">Pourquoi un moodboard structuré</a>
-            </div>
-            <div class="feature-visual">
-                <div class="visual-smartlink">
-                    <div class="smartlink-input">🔗 maisonsdumonde.com/FR/fr/p/fauteuil-oslo</div>
-                    <div class="smartlink-arrow">cocon récupère tout</div>
-                    <div class="smartlink-result">
-                        <div class="smartlink-thumb">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M7 10V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v3"/></svg>
-                        </div>
-                        <div>
-                            <div class="smartlink-info-name">Fauteuil Oslo</div>
-                            <div class="smartlink-info-meta">Maisons du Monde · Salon</div>
-                            <div class="smartlink-info-price">890 €</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="feature-caption">Une trentaine d'enseignes reconnues.</div>
-            </div>
-        </div>
-
-    </section>
-
-    <section class="for-who">
-        <div class="for-who-head">
-            <div class="for-who-eyebrow">Pour qui</div>
-            <h2>Pensé pour <span class="italic">tous les projets</span>, à toutes les échelles.</h2>
-            <p class="for-who-lede">
-                Un petit coup de neuf dans un studio ou la rénovation complète d'une maison de famille. Cocon s'adapte à la taille de votre projet et au nombre de personnes embarquées dans l'aventure.
-            </p>
-        </div>
-        <div class="who-grid">
-            <div class="who">
-                <div class="who-num">i.</div>
-                <p class="who-heading">Particuliers</p>
-                <p>Vous refaites votre intérieur à votre rythme. Cocon garde l'ordre dans vos idées et dans votre budget.</p>
-            </div>
-            <div class="who">
-                <div class="who-num">ii.</div>
-                <p class="who-heading">Couples</p>
-                <p>Fini les captures d'écran perdues sur WhatsApp. Un seul endroit, des choix discutés, et des votes quand il faut trancher.</p>
-            </div>
-            <div class="who">
-                <div class="who-num">iii.</div>
-                <p class="who-heading">Décorateurs</p>
-                <p>Présentez vos propositions de façon soignée. Vos clients réagissent directement dans l'app, sans aller-retour par mail.</p>
-            </div>
-            <div class="who">
-                <div class="who-num">iv.</div>
-                <p class="who-heading">Rénovateurs</p>
-                <p>Centralisez devis, matériaux et planning. Un lien en lecture seule pour les artisans qui interviennent chez vous.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="guides" id="guides">
-        <div class="guides-inner">
-            <div class="guides-head">
-                <div class="guides-head-text">
-                    <div class="guides-eyebrow">Guides pratiques</div>
-                    <h2>Pour <span class="italic">avancer sereinement</span> sur votre projet.</h2>
-                    <p class="guides-lede">
-                        Des conseils concrets sur les couleurs, l'aménagement, le budget et la rénovation. Écrits pour vous aider à décider, pas pour remplir des pages.
-                    </p>
-                </div>
-                <div class="guides-count"><strong>11 guides</strong><br>mis à jour en mai 2026</div>
-            </div>
-
-            <div class="guides-grid">
-
-                <a href="/blog/choisir-couleurs-peinture-interieur" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">i.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <circle cx="70" cy="50" r="22" fill="#B8553A" opacity="0.85"/>
-                            <circle cx="100" cy="38" r="22" fill="#8E8378" opacity="0.85"/>
-                            <circle cx="130" cy="50" r="22" fill="#D4A574" opacity="0.85"/>
-                            <circle cx="85" cy="70" r="22" fill="#C9A9A6" opacity="0.85"/>
-                            <circle cx="115" cy="70" r="22" fill="#2D3142" opacity="0.7"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Couleurs</span>
-                        <h3>Choisir ses couleurs de peinture intérieur</h3>
-                        <p>Harmonies, tendances 2026 et méthode pièce par pièce.</p>
-                        <span class="guide-meta">Mai 2026 · 8 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/quelle-couleur-pour-un-salon" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #ECE5D8, #F4EFE6);">
-                        <span class="guide-number">ii.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="30" y="30" width="140" height="70" rx="6" fill="white" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <rect x="40" y="40" width="30" height="50" rx="4" fill="#8E8378"/>
-                            <rect x="75" y="40" width="30" height="50" rx="4" fill="#B8553A"/>
-                            <rect x="110" y="40" width="30" height="50" rx="4" fill="#2D3142"/>
-                            <rect x="145" y="40" width="15" height="50" rx="4" fill="#F4EFE6" stroke="#DDD3C2"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Couleurs</span>
-                        <h3>Quelle couleur pour un salon ?</h3>
-                        <p>Les meilleures teintes en 2026, avec associations et erreurs à éviter.</p>
-                        <span class="guide-meta">Mai 2026 · 8 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/generateur-palette-couleurs-deco" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">iii.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <circle cx="75" cy="45" r="25" fill="#B8553A" opacity="0.7"/>
-                            <circle cx="125" cy="45" r="25" fill="#8E8378" opacity="0.7"/>
-                            <circle cx="100" cy="75" r="25" fill="#D4A574" opacity="0.7"/>
-                            <rect x="145" y="25" width="35" height="80" rx="6" fill="white" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <rect x="150" y="32" width="25" height="12" rx="3" fill="#B8553A"/>
-                            <rect x="150" y="49" width="25" height="12" rx="3" fill="#8E8378"/>
-                            <rect x="150" y="66" width="25" height="12" rx="3" fill="#D4A574"/>
-                            <rect x="150" y="83" width="25" height="12" rx="3" fill="#2D3142" opacity="0.5"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Outil</span>
-                        <h3>Générateur de palette de couleurs</h3>
-                        <p>Une harmonie de couleurs à partir d'une photo, en un clic.</p>
-                        <span class="guide-meta">Mai 2026 · 7 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/amenager-petit-salon" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #ECE5D8, #F4EFE6);">
-                        <span class="guide-number">iv.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="35" y="55" width="80" height="35" rx="8" fill="#D4A574" opacity="0.6"/>
-                            <rect x="30" y="48" width="15" height="42" rx="5" fill="#D4A574" opacity="0.8"/>
-                            <rect x="100" y="48" width="15" height="42" rx="5" fill="#D4A574" opacity="0.8"/>
-                            <rect x="40" y="45" width="70" height="12" rx="4" fill="#D4A574"/>
-                            <line x1="145" y1="25" x2="145" y2="95" stroke="#DDD3C2" stroke-width="2"/>
-                            <path d="M130 25 Q145 15 160 25" fill="none" stroke="#B8553A" stroke-width="2"/>
-                            <ellipse cx="168" cy="68" rx="12" ry="15" fill="#8E8378" opacity="0.6"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Aménagement</span>
-                        <h3>Aménager un petit salon</h3>
-                        <p>Douze astuces pour gagner de l'espace sans sacrifier le style.</p>
-                        <span class="guide-meta">Mai 2026 · 7 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/idee-deco-chambre-adulte" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">v.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="40" y="50" width="120" height="45" rx="6" fill="#D4A574" opacity="0.3"/>
-                            <rect x="45" y="40" width="110" height="15" rx="4" fill="#D4A574" opacity="0.5"/>
-                            <rect x="55" y="55" width="35" height="30" rx="4" fill="white" opacity="0.85"/>
-                            <rect x="110" y="55" width="35" height="30" rx="4" fill="white" opacity="0.85"/>
-                            <rect x="40" y="25" width="120" height="18" rx="4" fill="#ECE5D8"/>
-                            <circle cx="155" cy="35" r="8" fill="#B8553A" opacity="0.4"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Inspiration</span>
-                        <h3>Idée déco chambre adulte</h3>
-                        <p>15 inspirations par style — scandinave, japandi, bohème, cocooning.</p>
-                        <span class="guide-meta">Mai 2026 · 9 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/relooker-cuisine-sans-travaux" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #ECE5D8, #F4EFE6);">
-                        <span class="guide-number">vi.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="30" y="15" width="40" height="90" rx="4" fill="#ECE5D8"/>
-                            <rect x="75" y="15" width="40" height="90" rx="4" fill="#8E8378" opacity="0.6"/>
-                            <rect x="120" y="15" width="50" height="40" rx="4" fill="#ECE5D8"/>
-                            <rect x="120" y="60" width="50" height="45" rx="4" fill="#D4A574" opacity="0.3"/>
-                            <line x1="30" y1="110" x2="170" y2="110" stroke="#2D3142" stroke-width="2" opacity="0.3"/>
-                            <circle cx="50" cy="50" r="4" fill="#B8553A"/>
-                            <circle cx="95" cy="50" r="4" fill="#B8553A"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Relooking</span>
-                        <h3>Relooker sa cuisine sans gros travaux</h3>
-                        <p>Dix idées à petit budget : peinture, poignées, crédence, éclairage.</p>
-                        <span class="guide-meta">Mai 2026 · 8 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/checklist-decoration-premier-appartement" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">vii.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="55" y="10" width="90" height="100" rx="8" fill="white" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <rect x="70" y="28" width="12" height="12" rx="3" fill="none" stroke="#B8553A" stroke-width="1.5"/>
-                            <path d="M73 34l3 3 5-5" stroke="#B8553A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                            <line x1="88" y1="34" x2="125" y2="34" stroke="#DDD3C2" stroke-width="2"/>
-                            <rect x="70" y="48" width="12" height="12" rx="3" fill="none" stroke="#B8553A" stroke-width="1.5"/>
-                            <path d="M73 54l3 3 5-5" stroke="#B8553A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                            <line x1="88" y1="54" x2="120" y2="54" stroke="#DDD3C2" stroke-width="2"/>
-                            <rect x="70" y="68" width="12" height="12" rx="3" fill="none" stroke="#D4A574" stroke-width="1.5"/>
-                            <line x1="88" y1="74" x2="115" y2="74" stroke="#DDD3C2" stroke-width="2"/>
-                            <rect x="70" y="88" width="12" height="12" rx="3" fill="none" stroke="#D4A574" stroke-width="1.5"/>
-                            <line x1="88" y1="94" x2="122" y2="94" stroke="#DDD3C2" stroke-width="2"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Checklist</span>
-                        <h3>Checklist déco premier appartement</h3>
-                        <p>Ce qu'il faut acheter pièce par pièce, avec priorités et budget.</p>
-                        <span class="guide-meta">Mai 2026 · 9 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/organiser-renovation-appartement" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #ECE5D8, #F4EFE6);">
-                        <span class="guide-number">viii.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="40" y="20" width="120" height="85" rx="4" fill="white" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <line x1="100" y1="20" x2="100" y2="75" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <line x1="40" y1="75" x2="160" y2="75" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <line x1="100" y1="75" x2="100" y2="105" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <text x="70" y="50" text-anchor="middle" font-size="8" fill="#D4A574" font-family="Fraunces" font-style="italic">Salon</text>
-                            <text x="130" y="50" text-anchor="middle" font-size="8" fill="#D4A574" font-family="Fraunces" font-style="italic">Chambre</text>
-                            <text x="70" y="93" text-anchor="middle" font-size="8" fill="#D4A574" font-family="Fraunces" font-style="italic">Cuisine</text>
-                            <text x="130" y="93" text-anchor="middle" font-size="8" fill="#D4A574" font-family="Fraunces" font-style="italic">SDB</text>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Guide complet</span>
-                        <h3>Organiser sa rénovation d'appartement</h3>
-                        <p>Étape par étape : budget, planning, suivi de chantier, matériaux.</p>
-                        <span class="guide-meta">Avril 2026 · 8 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/budget-renovation-appartement" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">ix.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="30" y="90" width="24" height="20" rx="3" fill="#DDD3C2"/>
-                            <rect x="60" y="70" width="24" height="40" rx="3" fill="#D4A574"/>
-                            <rect x="90" y="45" width="24" height="65" rx="3" fill="#B8553A" opacity="0.7"/>
-                            <rect x="120" y="55" width="24" height="55" rx="3" fill="#B8553A"/>
-                            <rect x="150" y="30" width="24" height="80" rx="3" fill="#8E8378"/>
-                            <circle cx="155" cy="22" r="12" fill="white" stroke="#B8553A" stroke-width="1.5"/>
-                            <text x="155" y="27" text-anchor="middle" font-size="12" font-weight="600" fill="#B8553A">€</text>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Budget</span>
-                        <h3>Budget rénovation appartement 2026</h3>
-                        <p>Estimations par m² et par poste, astuces pour ne pas déraper.</p>
-                        <span class="guide-meta">Mai 2026 · 10 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/tricount-renovation-deco" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #ECE5D8, #F4EFE6);">
-                        <span class="guide-number">x.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="40" y="20" width="120" height="85" rx="10" fill="white" stroke="#DDD3C2" stroke-width="1.2"/>
-                            <circle cx="75" cy="50" r="14" fill="#B8553A" opacity="0.2"/>
-                            <text x="75" y="54" text-anchor="middle" font-size="11" font-weight="600" fill="#B8553A">A</text>
-                            <circle cx="125" cy="50" r="14" fill="#8E8378" opacity="0.2"/>
-                            <text x="125" y="54" text-anchor="middle" font-size="11" font-weight="600" fill="#8E8378">B</text>
-                            <text x="70" y="92" font-size="9" fill="#B8553A" font-weight="600">2 450 €</text>
-                            <text x="118" y="92" font-size="9" fill="#8E8378" font-weight="600">1 870 €</text>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Budget partagé</span>
-                        <h3>Tricount déco & rénovation</h3>
-                        <p>Suivre les dépenses à deux, pièce par pièce, sans tableur.</p>
-                        <span class="guide-meta">Mai 2026 · 6 min</span>
-                    </div>
-                </a>
-
-                <a href="/blog/moodboard-deco-gratuit" class="guide">
-                    <div class="guide-thumb" style="background: linear-gradient(135deg, #F4EFE6, #ECE5D8);">
-                        <span class="guide-number">xi.</span>
-                        <svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <rect x="35" y="15" width="55" height="45" rx="6" fill="#B8553A" opacity="0.25"/>
-                            <rect x="95" y="15" width="35" height="20" rx="4" fill="#8E8378" opacity="0.35"/>
-                            <rect x="135" y="15" width="30" height="20" rx="4" fill="#C9A9A6" opacity="0.5"/>
-                            <rect x="95" y="40" width="70" height="20" rx="4" fill="#D4A574" opacity="0.4"/>
-                            <rect x="35" y="65" width="35" height="40" rx="5" fill="#2D3142" opacity="0.2"/>
-                            <rect x="75" y="65" width="45" height="18" rx="4" fill="#B8553A" opacity="0.2"/>
-                            <rect x="125" y="65" width="40" height="40" rx="5" fill="#8E8378" opacity="0.25"/>
-                            <circle cx="62" cy="37" r="8" fill="white"/>
-                            <circle cx="62" cy="37" r="4" fill="#B8553A"/>
-                        </svg>
-                    </div>
-                    <div class="guide-body">
-                        <span class="guide-tag">Moodboard</span>
-                        <h3>Créer un moodboard déco gratuit</h3>
-                        <p>Pourquoi Pinterest ne suffit pas pour piloter un vrai projet.</p>
-                        <span class="guide-meta">Avril 2026 · 6 min</span>
-                    </div>
-                </a>
-
-            </div>
-        </div>
-    </section>
-
-    <section class="end">
-        <div class="end-inner">
-            <div class="end-eyebrow">C'est parti</div>
-            <h2>Posez votre projet,<br><span class="italic">on s'occupe du reste</span>.</h2>
-            <p>En deux minutes, votre premier projet est créé. Pièces, inspirations, budget, livraisons : tout vit ensemble, à votre rythme.</p>
-            <a href="/app" class="btn btn-primary">Ouvrir mon projet <span class="btn-arrow">→</span></a>
-            <div class="end-meta">Démarrez quand vous voulez, votre projet vous attend.</div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <footer>
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <div class="nav-logo">cocon<span>.</span></div>
-                <p>L'outil collaboratif pour organiser vos projets déco et rénovation. Vos inspirations, vos achats, votre budget et vos livraisons, tous au même endroit.</p>
-                <small>Fait avec soin à Paris</small>
+        <div class="wrap">
+            <div class="foot-grid">
+                <div class="foot-brand">
+                    <a href="/" class="logo">cocon<span>.</span></a>
+                    <p>L'outil collaboratif pour organiser vos projets déco et rénovation. Vos inspirations, vos achats, votre budget et vos livraisons, au même endroit.</p>
+                </div>
+                <div class="foot-col"><span class="mono">Produit</span><a href="/app">Ouvrir un projet</a><a href="#features">Fonctionnalités</a><a href="#process">Comment ça marche</a></div>
+                <div class="foot-col"><span class="mono">Guides</span><a href="/blog/budget-renovation-appartement">Budget rénovation</a><a href="/blog/organiser-renovation-appartement">Organiser sa rénovation</a><a href="/blog/tricount-renovation-deco">Tricount déco</a><a href="/blog/choisir-couleurs-peinture-interieur">Couleurs intérieures</a><a href="/blog/amenager-petit-salon">Aménager un petit salon</a><a href="/blog/moodboard-deco-gratuit">Créer un moodboard</a></div>
+                <div class="foot-col"><span class="mono">Légal</span><a href="/mentions-legales">Mentions légales</a><a href="/mentions-legales">Confidentialité</a><a href="/mentions-legales">CGU</a></div>
             </div>
-            <div class="footer-col">
-                <p class="footer-heading">Produit</p>
-                <ul>
-                    <li><a href="/app">Ouvrir un projet</a></li>
-                    <li><a href="#process">Comment ça marche</a></li>
-                    <li><a href="#features">Fonctionnalités</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <p class="footer-heading">Guides</p>
-                <ul>
-                    <li><a href="/blog/choisir-couleurs-peinture-interieur">Couleurs intérieures</a></li>
-                    <li><a href="/blog/amenager-petit-salon">Aménager un petit salon</a></li>
-                    <li><a href="/blog/organiser-renovation-appartement">Organiser sa rénovation</a></li>
-                    <li><a href="/blog/budget-renovation-appartement">Budget rénovation</a></li>
-                    <li><a href="/blog/moodboard-deco-gratuit">Créer un moodboard</a></li>
-                    <li><a href="/blog/tricount-renovation-deco">Tricount déco</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <p class="footer-heading">Légal</p>
-                <ul>
-                    <li><a href="/mentions-legales">Mentions légales</a></li>
-                    <li><a href="/mentions-legales">Confidentialité</a></li>
-                    <li><a href="/mentions-legales">CGU</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <span>© 2026 Cocon — <em>Tous droits réservés.</em></span>
-            <span>cocon-app.fr</span>
+            <div class="foot-bottom"><span>© 2026 Cocon</span><em>Fait avec soin à Paris</em></div>
         </div>
     </footer>
 
