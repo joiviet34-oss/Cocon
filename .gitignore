@@ -6,3 +6,11 @@
 *firebase-admin-key*.json
 *.credentials.json
 scripts/node_modules/
+# Identifiants OAuth Google / tokens (outils SEO, ne jamais commiter)
+client_secret*.json
+*seo-client*.json
+token.json
+token*.json
+*.token
+# Environnements virtuels Python
+.venv/
