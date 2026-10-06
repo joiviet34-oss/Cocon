@@ -1,9 +1,15 @@
 // netlify/functions/product-meta.mjs
 // Récupère nom, prix, photo, enseigne et réf d'une page produit.
 // Appel : /.netlify/functions/product-meta?url=https://...
-// Ordre de lecture : JSON-LD schema.org Product > balises og:/product: > <title>
+//
+// Solution 1 : lecture directe de la page (JSON-LD Product > og:/product: > <title>)
+// Solution 2 : si le site bloque ou renvoie une page anti-robot, on passe par
+//              Microlink (navigateur headless hébergé), qui renvoie les mêmes
+//              données. Sans clé : quota gratuit quotidien limité.
+//              Avec clé : variable d'env Netlify MICROLINK_API_KEY.
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
+const BLOCKED_NAME = /access denied|accès refusé|captcha|robot|un instant|just a moment|attention required|forbidden|pardon our interruption/i;
 
 export default async (req) => {
   const raw = new URL(req.url).searchParams.get('url');
@@ -16,19 +22,81 @@ export default async (req) => {
     return json({ error: 'forbidden' }, 400);
   }
 
+  // Solution 1 : lecture directe
+  const direct = await viaDirect(target);
+  if (isGood(direct)) return json({ ...direct, source: 'direct' }, 200, true);
+
+  // Solution 2 : Microlink
+  const ml = await viaMicrolink(target.href);
+  if (isGood(ml) || (ml && !ml.error)) {
+    const merged = mergeResults(direct, ml);
+    return json({ ...merged, source: 'microlink' }, 200, isGood(merged));
+  }
+
+  // Rien d'exploitable : on renvoie au moins ce que la lecture directe a trouvé
+  if (direct && !direct.error && direct.name) return json({ ...direct, source: 'direct-partial' });
+  return json({ error: direct?.error || ml?.error || 'unreadable' });
+};
+
+function isGood(r) {
+  return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name) && (r.price || r.image));
+}
+
+function mergeResults(a, b) {
+  const base = a && !a.error && a.name && !BLOCKED_NAME.test(a.name) ? a : {};
+  const out = { ...b };
+  for (const k of ['name', 'price', 'image', 'site', 'brand', 'ref']) out[k] = base[k] ?? b?.[k] ?? null;
+  delete out.error;
+  return out;
+}
+
+async function viaDirect(target) {
   try {
     const res = await fetch(target, {
       headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'fr-FR,fr;q=0.9' },
       redirect: 'follow',
-      signal: AbortSignal.timeout(7000),
+      signal: AbortSignal.timeout(4000),
     });
-    if (!res.ok) return json({ error: 'fetch_' + res.status });
+    if (!res.ok) return { error: 'fetch_' + res.status };
     const html = (await res.text()).slice(0, 2_000_000);
-    return json(extract(html, res.url || target.href), 200, true);
+    return extract(html, res.url || target.href);
   } catch {
-    return json({ error: 'timeout' });
+    return { error: 'timeout' };
   }
-};
+}
+
+async function viaMicrolink(pageUrl) {
+  const key = process.env.MICROLINK_API_KEY;
+  const q = new URLSearchParams({
+    url: pageUrl,
+    'data.ld.selectorAll': 'script[type="application/ld+json"]',
+    'data.ld.attr': 'html',
+    'data.price.selector': 'meta[property="product:price:amount"],meta[property="og:price:amount"],meta[itemprop="price"]',
+    'data.price.attr': 'content',
+  });
+  try {
+    const res = await fetch(`https://${key ? 'pro' : 'api'}.microlink.io/?${q}`, {
+      headers: key ? { 'x-api-key': key } : {},
+      signal: AbortSignal.timeout(5500),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body.status !== 'success') return { error: 'microlink_' + (body.code || res.status) };
+    const d = body.data || {};
+
+    // On reconstruit un mini-HTML pour réutiliser exactement le même extracteur
+    let html = [].concat(d.ld || []).filter(Boolean)
+      .map(s => `<script type="application/ld+json">${s}</script>`).join('');
+    if (d.price) html += `<meta property="product:price:amount" content="${String(d.price).replace(/"/g, '')}">`;
+    const r = extract(html, pageUrl);
+
+    r.name = r.name || cleanName(d.title, d.publisher, pageUrl);
+    r.image = r.image || d.image?.url || null;
+    r.site = r.site || d.publisher || null;
+    return r;
+  } catch {
+    return { error: 'microlink_timeout' };
+  }
+}
 
 function json(obj, status = 200, cache = false) {
   return new Response(JSON.stringify(obj), {
