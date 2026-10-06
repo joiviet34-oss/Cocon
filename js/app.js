@@ -452,6 +452,7 @@ function showAddItemModal(editItem = null) {
     const modal = document.getElementById('modal-add-item');
     modal.classList.add('active');
     resetItemImagePreview();
+    resetSmartLinkState();
     populatePaidByOptions();
 
     if (editItem) {
@@ -1427,8 +1428,14 @@ async function exportPDF() {
 
 // ─── MODALS ──────────────────────────────────────────────────
 
+// Ne ferme que si le clic a AUSSI commencé sur l'overlay : sinon, sélectionner
+// le texte d'un champ en glissant et relâcher hors de la carte fermait la popup.
+let modalPointerDownTarget = null;
+document.addEventListener('pointerdown', e => { modalPointerDownTarget = e.target; }, true);
+
 function closeModal(event, id) {
-    if (event.target === document.getElementById(id)) closeModalById(id);
+    const overlay = document.getElementById(id);
+    if (event.target === overlay && modalPointerDownTarget === overlay) closeModalById(id);
 }
 
 function closeModalById(id) {
@@ -1903,53 +1910,94 @@ function parseProductUrl(url) {
     }
 }
 
+// ─── SMART LINK v2 : vraie lecture de la page produit ───────
+// Un champ rempli automatiquement reste "auto" et peut être écrasé
+// par un meilleur résultat (ou un autre lien). Dès que l'utilisateur
+// le touche, il n'est plus jamais écrasé.
+
+const SL_FIELDS = {
+    name: 'item-input-name',
+    supplier: 'item-input-supplier',
+    ref: 'item-input-ref',
+    price: 'item-input-price',
+    category: 'item-input-category',
+};
+const SL_IDS = Object.values(SL_FIELDS);
+
+['input', 'change'].forEach(evt => document.addEventListener(evt, e => {
+    if (e.isTrusted && SL_IDS.includes(e.target.id)) e.target.dataset.auto = '0';
+}));
+
+function resetSmartLinkState() {
+    SL_IDS.concat('item-image-file-data').forEach(id => {
+        const el = document.getElementById(id);
+        if (el) delete el.dataset.auto;
+    });
+    smartLinkSeq++;
+}
+
+function slSet(key, value) {
+    const el = document.getElementById(SL_FIELDS[key]);
+    if (!el || value == null || value === '') return false;
+    if (el.value && el.dataset.auto !== '1') return false; // saisi par l'utilisateur
+    el.value = value;
+    el.dataset.auto = '1';
+    if (key === 'category') updateSubcategoryOptions();
+    return true;
+}
+
 let smartLinkTimeout = null;
+let smartLinkSeq = 0;
+
 function handleSmartLink(url) {
     clearTimeout(smartLinkTimeout);
     const hint = document.getElementById('smart-link-hint');
-    
-    if (!url || url.length < 10) {
-        hint.textContent = '';
-        return;
-    }
-    
-    // Debounce 300ms
-    smartLinkTimeout = setTimeout(() => {
-        const parsed = parseProductUrl(url);
-        if (!parsed) {
-            hint.textContent = '';
+    url = (url || '').trim();
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) { hint.textContent = ''; return; }
+
+    smartLinkTimeout = setTimeout(async () => {
+        const seq = ++smartLinkSeq;
+
+        // a) Instantané : ce qu'on peut déduire de l'URL
+        const local = parseProductUrl(url) || {};
+        slSet('supplier', local.supplier);
+        slSet('name', local.name);
+        slSet('ref', local.ref);
+        slSet('category', local.category);
+        hint.textContent = '⏳ Récupération du produit…';
+        hint.className = 'smart-link-hint partial';
+
+        // b) Lecture de la page produit côté serveur
+        let d = {};
+        try {
+            const r = await fetch('/.netlify/functions/product-meta?url=' + encodeURIComponent(url));
+            d = await r.json();
+        } catch { d = { error: 'network' }; }
+        if (seq !== smartLinkSeq) return; // un autre lien a été collé entre-temps
+
+        if (d.error) {
+            hint.textContent = 'Page non lisible, vérifiez le nom et le prix';
+            hint.className = 'smart-link-hint partial';
             return;
         }
-        
-        let filled = [];
-        
-        // Only fill empty fields (don't overwrite user input)
-        if (parsed.supplier && !document.getElementById('item-input-supplier').value) {
-            document.getElementById('item-input-supplier').value = parsed.supplier;
-            filled.push('fournisseur');
+
+        const filled = [];
+        if (slSet('name', d.name)) filled.push('nom');
+        if (slSet('price', d.price)) filled.push('prix');
+        if (slSet('supplier', d.site)) filled.push('fournisseur');
+        if (slSet('ref', d.ref)) filled.push('réf');
+
+        const img = document.getElementById('item-image-file-data');
+        if (d.image && !pendingItemFile && (!img.value || img.dataset.auto === '1')) {
+            img.value = d.image;
+            img.dataset.auto = '1';
+            showItemImagePreview(d.image);
+            filled.push('photo');
         }
-        if (parsed.name && !document.getElementById('item-input-name').value) {
-            document.getElementById('item-input-name').value = parsed.name;
-            filled.push('nom');
-        }
-        if (parsed.ref && !document.getElementById('item-input-ref').value) {
-            document.getElementById('item-input-ref').value = parsed.ref;
-            filled.push('réf');
-        }
-        if (parsed.category && !document.getElementById('item-input-category').value) {
-            document.getElementById('item-input-category').value = parsed.category;
-            updateSubcategoryOptions();
-            filled.push('catégorie');
-        }
-        
-        if (filled.length > 0) {
-            hint.textContent = `✨ ${filled.join(', ')} pré-rempli${filled.length > 1 ? 's' : ''}`;
-            hint.className = 'smart-link-hint success';
-        } else if (parsed.supplier) {
-            hint.textContent = `✓ ${parsed.supplier} détecté`;
-            hint.className = 'smart-link-hint partial';
-        }
-    }, 300);
+
+        hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''}` : '';
+        hint.className = 'smart-link-hint success';
+    }, 250);
 }
 
 // ─── INSPIRATION SPLIT VIEW & POST-ITS ───────────────────────

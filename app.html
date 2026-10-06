@@ -520,6 +520,10 @@
             </div>
             <form onsubmit="saveItem(event)">
                 <input type="hidden" id="item-edit-id" value="">
+                <div class="form-group">
+                    <label>🔗 Lien <span class="smart-link-hint" id="smart-link-hint"></span></label>
+                    <input type="url" id="item-input-link" placeholder="https://www.ikea.com/… — collez un lien, on pré-remplit !" oninput="handleSmartLink(this.value)">
+                </div>
 
                 <div class="form-group">
                     <label>Image</label>
@@ -579,10 +583,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>🔗 Lien <span class="smart-link-hint" id="smart-link-hint"></span></label>
-                    <input type="url" id="item-input-link" placeholder="https://www.ikea.com/… — collez un lien, on pré-remplit !" oninput="handleSmartLink(this.value)">
-                </div>
 
                 <div class="form-row">
                     <div class="form-group">
