@@ -2,16 +2,22 @@
 // Récupère nom, prix, photo, enseigne et réf d'une page produit.
 // Appel : /.netlify/functions/product-meta?url=https://...
 //
-// Solution 1 : lecture directe de la page (JSON-LD Product > og:/product: > <title>)
-// Solution 2 : si le site bloque ou renvoie une page anti-robot, on passe par
-//              Microlink (navigateur headless hébergé), qui renvoie les mêmes
-//              données. Sans clé : quota gratuit quotidien limité.
-//              Avec clé : variable d'env Netlify MICROLINK_API_KEY.
+// Chaîne de récupération, du moins cher au plus robuste :
+//   1. Lecture directe de la page (gratuit, ~1 s) : JSON-LD Product > og: > <title>
+//   2. Zyte API, extraction produit automatique (si ZYTE_API_KEY est définie) :
+//      proxies, contournement anti-bot et IA d'extraction gérés par Zyte.
+//   3. Microlink en dernier recours (MICROLINK_API_KEY optionnelle, sinon quota gratuit).
+// Les résultats réussis sont mis en cache 7 jours sur le CDN Netlify :
+// un même lien collé deux fois ne coûte qu'un seul appel payant.
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
 const BLOCKED_NAME = /access denied|accès refusé|captcha|robot|un instant|just a moment|attention required|forbidden|pardon our interruption/i;
+const BUDGET_MS = 9500; // reste sous la limite de 10 s des fonctions Netlify
 
 export default async (req) => {
+  const t0 = Date.now();
+  const left = () => BUDGET_MS - (Date.now() - t0);
+
   const raw = new URL(req.url).searchParams.get('url');
   let target;
   try { target = new URL(raw); } catch { return json({ error: 'bad_url' }, 400); }
@@ -22,42 +28,57 @@ export default async (req) => {
     return json({ error: 'forbidden' }, 400);
   }
 
-  // Solution 1 : lecture directe
-  const direct = await viaDirect(target);
-  if (isGood(direct)) return json({ ...direct, source: 'direct' }, 200, true);
+  const tried = [];
 
-  // Solution 2 : Microlink
-  const ml = await viaMicrolink(target.href);
-  if (isGood(ml) || (ml && !ml.error)) {
-    const merged = mergeResults(direct, ml);
-    return json({ ...merged, source: 'microlink' }, 200, isGood(merged));
+  // 1. Lecture directe
+  const direct = await viaDirect(target, 2500);
+  tried.push('direct:' + (direct.error || 'ok'));
+  if (isGood(direct)) return json({ ...direct, source: 'direct' }, 200, true);
+  let best = usable(direct) ? direct : null;
+
+  // 2. Zyte
+  if (process.env.ZYTE_API_KEY && left() > 2500) {
+    const z = await viaZyte(target.href, left() - 300);
+    tried.push('zyte:' + (z.error || 'ok'));
+    if (!z.error) {
+      best = mergeResults(best, z);
+      if (isGood(best)) return json({ ...best, source: 'zyte' }, 200, true);
+    }
   }
 
-  // Rien d'exploitable : on renvoie au moins ce que la lecture directe a trouvé
-  if (direct && !direct.error && direct.name) return json({ ...direct, source: 'direct-partial' });
-  return json({ error: direct?.error || ml?.error || 'unreadable' });
+  // 3. Microlink
+  if (left() > 2000) {
+    const ml = await viaMicrolink(target.href, left() - 300);
+    tried.push('microlink:' + (ml.error || 'ok'));
+    if (!ml.error) {
+      best = mergeResults(best, ml);
+      if (isGood(best)) return json({ ...best, source: 'microlink' }, 200, true);
+    }
+  }
+
+  if (best?.name) return json({ ...best, source: 'partial', tried });
+  return json({ error: 'unreadable', tried });
 };
 
-function isGood(r) {
-  return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name) && (r.price || r.image));
-}
+function usable(r) { return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name)); }
+function isGood(r) { return usable(r) && !!(r.price || r.image); }
 
+// Garde les valeurs déjà trouvées, complète avec la nouvelle source
 function mergeResults(a, b) {
-  const base = a && !a.error && a.name && !BLOCKED_NAME.test(a.name) ? a : {};
-  const out = { ...b };
+  const base = usable(a) ? a : {};
+  const out = {};
   for (const k of ['name', 'price', 'image', 'site', 'brand', 'ref']) out[k] = base[k] ?? b?.[k] ?? null;
-  delete out.error;
   return out;
 }
 
-async function viaDirect(target) {
+async function viaDirect(target, ms) {
   try {
     const res = await fetch(target, {
       headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'fr-FR,fr;q=0.9' },
       redirect: 'follow',
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(ms),
     });
-    if (!res.ok) return { error: 'fetch_' + res.status };
+    if (!res.ok) return { error: 'http_' + res.status };
     const html = (await res.text()).slice(0, 2_000_000);
     return extract(html, res.url || target.href);
   } catch {
@@ -65,7 +86,40 @@ async function viaDirect(target) {
   }
 }
 
-async function viaMicrolink(pageUrl) {
+async function viaZyte(pageUrl, ms) {
+  try {
+    const res = await fetch('https://api.zyte.com/v1/extract', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + btoa(process.env.ZYTE_API_KEY + ':'),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: pageUrl,
+        product: true,
+        // Plus rapide et moins cher que le rendu navigateur ; suffisant pour la plupart des e-commerçants
+        productOptions: { extractFrom: 'httpResponseBody' },
+      }),
+      signal: AbortSignal.timeout(ms),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: 'http_' + res.status + (body.type ? '_' + String(body.type).split('/').pop() : '') };
+    const p = body.product;
+    if (!p || !p.name) return { error: 'no_product' };
+    return {
+      name: cleanName(p.name, null, pageUrl),
+      price: parsePrice(p.price),
+      image: p.mainImage?.url || p.images?.[0]?.url || null,
+      site: siteFromHost(pageUrl),
+      brand: p.brand?.name || null,
+      ref: p.sku || p.mpn || p.productId || null,
+    };
+  } catch {
+    return { error: 'timeout' };
+  }
+}
+
+async function viaMicrolink(pageUrl, ms) {
   const key = process.env.MICROLINK_API_KEY;
   const q = new URLSearchParams({
     url: pageUrl,
@@ -77,10 +131,10 @@ async function viaMicrolink(pageUrl) {
   try {
     const res = await fetch(`https://${key ? 'pro' : 'api'}.microlink.io/?${q}`, {
       headers: key ? { 'x-api-key': key } : {},
-      signal: AbortSignal.timeout(5500),
+      signal: AbortSignal.timeout(ms),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok || body.status !== 'success') return { error: 'microlink_' + (body.code || res.status) };
+    if (!res.ok || body.status !== 'success') return { error: 'http_' + (body.code || res.status) };
     const d = body.data || {};
 
     // On reconstruit un mini-HTML pour réutiliser exactement le même extracteur
@@ -91,21 +145,35 @@ async function viaMicrolink(pageUrl) {
 
     r.name = r.name || cleanName(d.title, d.publisher, pageUrl);
     r.image = r.image || d.image?.url || null;
-    r.site = r.site || d.publisher || null;
+    r.site = r.site || d.publisher || siteFromHost(pageUrl);
     return r;
   } catch {
-    return { error: 'microlink_timeout' };
+    return { error: 'timeout' };
   }
 }
 
+const SITE_NAMES = {
+  ikea: 'IKEA', maisonsdumonde: 'Maisons du Monde', laredoute: 'La Redoute', ampm: 'AM.PM',
+  leroymerlin: 'Leroy Merlin', castorama: 'Castorama', conforama: 'Conforama', but: 'BUT',
+  habitat: 'Habitat', westwing: 'Westwing', manomano: 'ManoMano', bricodepot: 'Brico Dépôt',
+  zarahome: 'Zara Home', hm: 'H&M Home', fermlivingfr: 'ferm LIVING', made: 'Made.com',
+  sklum: 'Sklum', kavehome: 'Kave Home', amazon: 'Amazon', cdiscount: 'Cdiscount',
+  boulanger: 'Boulanger', darty: 'Darty', fnac: 'Fnac', alinea: 'Alinéa', gifi: 'Gifi',
+};
+function siteFromHost(pageUrl) {
+  const h = new URL(pageUrl).hostname.replace(/^(www\d?|m|fr)\./, '').split('.')[0].replace(/-/g, '');
+  return SITE_NAMES[h] || h.charAt(0).toUpperCase() + h.slice(1);
+}
+
 function json(obj, status = 200, cache = false) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': cache ? 'public, max-age=86400' : 'no-store',
-    },
-  });
+  const headers = { 'content-type': 'application/json; charset=utf-8', 'netlify-vary': 'query=url' };
+  if (cache) {
+    headers['cache-control'] = 'public, max-age=86400';
+    headers['netlify-cdn-cache-control'] = 'public, durable, max-age=604800';
+  } else {
+    headers['cache-control'] = 'no-store';
+  }
+  return new Response(JSON.stringify(obj), { status, headers });
 }
 
 // ─── Extraction ────────────────────────────────────────────────
