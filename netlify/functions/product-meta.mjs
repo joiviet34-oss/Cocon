@@ -12,7 +12,7 @@
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
 const BLOCKED_NAME = /access denied|accès refusé|captcha|robot|un instant|just a moment|attention required|forbidden|pardon our interruption/i;
-const BUDGET_MS = 9500; // reste sous la limite de 10 s des fonctions Netlify
+const BUDGET_MS = 45000; // les fonctions synchrones Netlify ont 60 s ; on garde de la marge
 
 export default async (req) => {
   const t0 = Date.now();
@@ -33,35 +33,39 @@ export default async (req) => {
   // 1. Lecture directe
   const direct = await viaDirect(target, 2500);
   tried.push('direct:' + (direct.error || 'ok'));
-  if (isGood(direct)) return json({ ...direct, source: 'direct' }, 200, true);
+  if (isComplete(direct)) return json({ ...direct, source: 'direct' }, 200, true);
   let best = usable(direct) ? direct : null;
+  let source = best ? 'direct' : null;
 
-  // 2. Zyte
-  if (process.env.ZYTE_API_KEY && left() > 2500) {
-    const z = await viaZyte(target.href, left() - 300);
+  // 2. Zyte : navigateur hébergé + anti-bot, comble ce qui manque (souvent le prix)
+  if (process.env.ZYTE_API_KEY && left() > 8000) {
+    const z = await viaZyte(target.href, Math.min(left() - 8000, 35000));
     tried.push('zyte:' + (z.error || 'ok'));
     if (!z.error) {
       best = mergeResults(best, z);
-      if (isGood(best)) return json({ ...best, source: 'zyte' }, 200, true);
+      source = 'zyte';
+      if (isComplete(best)) return json({ ...best, source }, 200, true);
     }
   }
 
-  // 3. Microlink
-  if (left() > 2000) {
-    const ml = await viaMicrolink(target.href, left() - 300);
+  // 3. Microlink, seulement si on n'a toujours pas l'essentiel
+  if (!isGood(best) && left() > 3000) {
+    const ml = await viaMicrolink(target.href, left() - 500);
     tried.push('microlink:' + (ml.error || 'ok'));
     if (!ml.error) {
       best = mergeResults(best, ml);
-      if (isGood(best)) return json({ ...best, source: 'microlink' }, 200, true);
+      source = 'microlink';
     }
   }
 
+  if (isGood(best)) return json({ ...best, source, tried }, 200, isComplete(best));
   if (best?.name) return json({ ...best, source: 'partial', tried });
   return json({ error: 'unreadable', tried });
 };
 
 function usable(r) { return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name)); }
 function isGood(r) { return usable(r) && !!(r.price || r.image); }
+function isComplete(r) { return usable(r) && !!r.price && !!r.image; }
 
 // Garde les valeurs déjà trouvées, complète avec la nouvelle source
 function mergeResults(a, b) {
@@ -97,8 +101,7 @@ async function viaZyte(pageUrl, ms) {
       body: JSON.stringify({
         url: pageUrl,
         product: true,
-        // Plus rapide et moins cher que le rendu navigateur ; suffisant pour la plupart des e-commerçants
-        productOptions: { extractFrom: 'httpResponseBody' },
+        // Rendu dans un vrai navigateur (défaut Zyte) : nécessaire pour passer les murs anti-bot
       }),
       signal: AbortSignal.timeout(ms),
     });
@@ -187,7 +190,8 @@ function extract(html, pageUrl) {
 
   const offer = [].concat(p?.offers || [])[0] || {};
   const priceRaw = offer.price ?? offer.lowPrice ?? offer.priceSpecification?.price
-    ?? meta(html, 'product:price:amount') ?? meta(html, 'og:price:amount') ?? meta(html, 'price');
+    ?? meta(html, 'product:price:amount') ?? meta(html, 'og:price:amount') ?? meta(html, 'price')
+    ?? (p || meta(html, 'og:type') === 'product' ? dataLayerPrice(html) : null);
 
   const ldImg = [].concat(p?.image || [])[0];
   const image = (typeof ldImg === 'object' ? ldImg?.url || ldImg?.contentUrl : ldImg)
@@ -205,6 +209,13 @@ function extract(html, pageUrl) {
     brand: decode(brand) || null,
     ref: p?.sku || p?.mpn || p?.productID || null,
   };
+}
+
+// Prix présent seulement dans un objet JS embarqué (data layer type Tealium, ex. IKEA : "price":["549"])
+function dataLayerPrice(html) {
+  const m = html.match(/"(?:product_)?price"\s*:\s*\[\s*"(\d+(?:[.,]\d{1,2})?)"/)
+    || html.match(/"(?:product_price|productPrice|price_ttc)"\s*:\s*"?(\d+(?:[.,]\d{1,2})?)/);
+  return m ? m[1] : null;
 }
 
 function findProduct(node) {

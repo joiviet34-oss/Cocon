@@ -1966,13 +1966,19 @@ function handleSmartLink(url) {
         slSet('category', local.category);
         hint.textContent = '⏳ Récupération du produit…';
         hint.className = 'smart-link-hint partial';
+        // Les sites protégés passent par un navigateur hébergé : ça peut prendre jusqu'à ~30 s
+        const slowHint = setTimeout(() => {
+            if (seq === smartLinkSeq) hint.textContent = '⏳ Site protégé, on insiste… (jusqu\'à 30 s, vous pouvez continuer à remplir)';
+        }, 5000);
 
         // b) Lecture de la page produit côté serveur
         let d = {};
         try {
-            const r = await fetch('/.netlify/functions/product-meta?url=' + encodeURIComponent(url));
+            const r = await fetch('/.netlify/functions/product-meta?url=' + encodeURIComponent(url),
+                { signal: AbortSignal.timeout(55000) });
             d = await r.json();
         } catch { d = { error: 'network' }; }
+        clearTimeout(slowHint);
         if (seq !== smartLinkSeq) return; // un autre lien a été collé entre-temps
 
         if (d.error) {
