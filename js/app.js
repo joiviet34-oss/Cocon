@@ -530,14 +530,17 @@ async function saveItem(e) {
 
     const itemsRef = db.collection('projects').doc(currentProject.id).collection('items');
 
+    let savedRef;
     if (editId) {
-        await itemsRef.doc(editId).update(data);
+        savedRef = itemsRef.doc(editId);
+        await savedRef.update(data);
         toast('Élément mis à jour');
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        await itemsRef.add(data);
+        savedRef = await itemsRef.add(data);
         toast('Élément ajouté !');
     }
+    enrichItemWhenReady(savedRef, data);
 
     closeModalById('modal-add-item');
     submitBtn.disabled = false;
@@ -1949,6 +1952,49 @@ function slSet(key, value) {
 let smartLinkTimeout = null;
 let smartLinkSeq = 0;
 
+// Interroge la fonction serveur. Si le site est protégé, elle répond { pending: true }
+// et continue en arrière-plan : on la rappelle toutes les 3 s (90 s max).
+let smartLinkJob = null; // { url, promise, done }
+
+function fetchProductMeta(url, onPending) {
+    const endpoint = '/.netlify/functions/product-meta?url=' + encodeURIComponent(url);
+    const job = { url, done: false };
+    job.promise = (async () => {
+        try {
+            let r = await fetch(endpoint, { signal: AbortSignal.timeout(28000) });
+            let d = await r.json();
+            const until = Date.now() + 90000;
+            while (d.pending && Date.now() < until) {
+                onPending?.(d);
+                await new Promise(res => setTimeout(res, 3000));
+                r = await fetch(endpoint + '&poll=1', { signal: AbortSignal.timeout(15000) });
+                d = await r.json();
+            }
+            if (d.pending) return { error: 'timeout' };
+            return d;
+        } catch { return { error: 'network' }; }
+        finally { job.done = true; }
+    })();
+    smartLinkJob = job;
+    return job.promise;
+}
+
+function applyProductMeta(d) {
+    const filled = [];
+    if (slSet('name', d.name)) filled.push('nom');
+    if (slSet('price', d.price)) filled.push('prix');
+    if (slSet('supplier', d.site)) filled.push('fournisseur');
+    if (slSet('ref', d.ref)) filled.push('réf');
+    const img = document.getElementById('item-image-file-data');
+    if (d.image && !pendingItemFile && (!img.value || img.dataset.auto === '1')) {
+        img.value = d.image;
+        img.dataset.auto = '1';
+        showItemImagePreview(d.image);
+        filled.push('photo');
+    }
+    return filled;
+}
+
 function handleSmartLink(url) {
     clearTimeout(smartLinkTimeout);
     const hint = document.getElementById('smart-link-hint');
@@ -1966,44 +2012,48 @@ function handleSmartLink(url) {
         slSet('category', local.category);
         hint.textContent = '⏳ Récupération du produit…';
         hint.className = 'smart-link-hint partial';
-        // Les sites protégés passent par un navigateur hébergé : ça peut prendre jusqu'à ~45 s
-        const slowHint = setTimeout(() => {
-            if (seq === smartLinkSeq) hint.textContent = '⏳ Site protégé, on insiste… (jusqu\'à 45 s, vous pouvez continuer à remplir)';
-        }, 5000);
 
-        // b) Lecture de la page produit côté serveur
-        let d = {};
-        try {
-            const r = await fetch('/.netlify/functions/product-meta?url=' + encodeURIComponent(url),
-                { signal: AbortSignal.timeout(62000) });
-            d = await r.json();
-        } catch { d = { error: 'network' }; }
-        clearTimeout(slowHint);
-        if (seq !== smartLinkSeq) return; // un autre lien a été collé entre-temps
+        // b) Lecture de la page produit côté serveur (avec suite en arrière-plan si besoin)
+        let partialShown = false;
+        const d = await fetchProductMeta(url, (p) => {
+            if (seq !== smartLinkSeq) return;
+            if (!partialShown && p.name) { applyProductMeta(p); partialShown = true; }
+            hint.textContent = '⏳ Site protégé, on récupère la photo et le prix… Vous pouvez déjà ajouter, la fiche se complétera toute seule.';
+        });
+        if (seq !== smartLinkSeq) return; // un autre lien a été collé, ou la popup a été rouverte
 
-        if (d.error) {
+        if (d.error && !d.name) {
             hint.textContent = 'Page non lisible, vérifiez le nom et le prix';
             hint.className = 'smart-link-hint partial';
             return;
         }
-
-        const filled = [];
-        if (slSet('name', d.name)) filled.push('nom');
-        if (slSet('price', d.price)) filled.push('prix');
-        if (slSet('supplier', d.site)) filled.push('fournisseur');
-        if (slSet('ref', d.ref)) filled.push('réf');
-
-        const img = document.getElementById('item-image-file-data');
-        if (d.image && !pendingItemFile && (!img.value || img.dataset.auto === '1')) {
-            img.value = d.image;
-            img.dataset.auto = '1';
-            showItemImagePreview(d.image);
-            filled.push('photo');
-        }
-
+        const filled = applyProductMeta(d);
         hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''}` : '';
         hint.className = 'smart-link-hint success';
     }, 250);
+}
+
+// Après l'enregistrement : si la récupération tourne encore pour ce lien,
+// on complète la fiche dès qu'elle aboutit (sans écraser ce que l'utilisateur a saisi).
+function enrichItemWhenReady(docRef, saved) {
+    const job = smartLinkJob;
+    if (!job || job.done || !saved.link || job.url !== saved.link) return;
+    const autoName = document.getElementById('item-input-name').dataset.auto === '1';
+    job.promise.then(async (d) => {
+        if (!d || (d.error && !d.name)) return;
+        const patch = {};
+        if (d.name && autoName) patch.name = d.name;
+        if (d.price && !saved.price) patch.price = d.price;
+        if (d.image && !saved.imageUrl) patch.imageUrl = d.image;
+        if (d.site && !saved.supplier) patch.supplier = d.site;
+        if (d.ref && !saved.ref) patch.ref = d.ref;
+        if (!Object.keys(patch).length) return;
+        patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        try {
+            await docRef.update(patch);
+            toast(`✨ ${saved.name || 'Élément'} complété${patch.price ? ' (prix' + (patch.imageUrl ? ' et photo)' : ')') : patch.imageUrl ? ' (photo)' : ''}`);
+        } catch (e) { console.error('Enrichissement :', e); }
+    });
 }
 
 // ─── INSPIRATION SPLIT VIEW & POST-ITS ───────────────────────

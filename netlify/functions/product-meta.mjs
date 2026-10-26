@@ -2,217 +2,65 @@
 // Récupère nom, prix, photo, enseigne et réf d'une page produit.
 // Appel : /.netlify/functions/product-meta?url=https://...
 //
-// Chaîne de récupération, du moins cher au plus robuste :
-//   1. Lecture directe de la page (gratuit, ~1 s) : JSON-LD Product > og: > <title>
-//   2. Zyte API, extraction produit automatique en navigateur (si ZYTE_API_KEY est définie) :
-//      proxies, contournement anti-bot et IA d'extraction gérés par Zyte.
-//   3. Microlink en dernier recours (MICROLINK_API_KEY optionnelle, sinon quota gratuit).
-// Les résultats complets sont mis en cache 7 jours (CDN + Cache API Netlify) :
-// un même lien collé deux fois ne coûte qu'un seul appel payant.
+// Netlify coupe toute réponse synchrone vers 30 s. Donc :
+//   1. Résultat déjà connu (cache 7 jours) : réponse immédiate.
+//   2. Lecture directe de la page (gratuit, ~2 s) : si nom + prix + photo, réponse immédiate.
+//   3. Sinon : on lance product-meta-bg (fonction d'arrière-plan, jusqu'à 15 min) qui
+//      interroge Zyte puis Microlink, et on répond tout de suite { pending: true }
+//      avec ce qu'on a déjà. L'app rappelle ensuite cette URL avec &poll=1 toutes
+//      les 3 s jusqu'à obtenir le résultat ou { error }.
 
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
-const BLOCKED_NAME = /access denied|accès refusé|captcha|robot|un instant|just a moment|attention required|forbidden|pardon our interruption/i;
-const BUDGET_MS = 54000; // limite Netlify des réponses en streaming : 60 s
+import { parseTarget, openCache, resultKey, statusKey, cacheGet, cachePut,
+         viaDirect, usable, isComplete } from '../lib/product-extract.mjs';
 
-// Netlify coupe une réponse qui n'envoie aucun octet pendant 30 s ("Inactivity Timeout").
-// Le chemin lent (Zyte, Microlink) répond donc en streaming : un espace toutes les 5 s
-// garde la connexion ouverte, puis le JSON final. JSON.parse ignore les espaces en tête.
+const RUN_TTL = 150; // une recherche en arrière-plan est considérée en cours pendant 150 s max
 
 export default async (req) => {
-  const t0 = Date.now();
-  const left = () => BUDGET_MS - (Date.now() - t0);
+  const reqUrl = new URL(req.url);
+  const { target, error } = parseTarget(reqUrl.searchParams.get('url'));
+  if (error) return json({ error }, 400);
+  const isPoll = reqUrl.searchParams.has('poll');
 
-  const raw = new URL(req.url).searchParams.get('url');
-  let target;
-  try { target = new URL(raw); } catch { return json({ error: 'bad_url' }, 400); }
-
-  // Garde-fou SSRF minimal
-  if (!/^https?:$/.test(target.protocol) ||
-      /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|\[)/.test(target.hostname)) {
-    return json({ error: 'forbidden' }, 400);
-  }
-
-  // Résultat déjà connu pour ce lien (cache Netlify, 7 jours) : réponse immédiate, aucun appel payant
-  const cacheKey = new Request('https://product-meta.cache/?url=' + encodeURIComponent(target.href));
   const cache = await openCache();
-  const hit = await cache?.match(cacheKey).catch(() => null);
-  if (hit) return json({ ...(await hit.json()), cached: true }, 200, true);
 
-  const tried = [];
+  // 1. Déjà connu
+  const known = await cacheGet(cache, resultKey(target.href));
+  if (known) return json({ ...known, cached: true }, 200, true);
 
-  // 1. Lecture directe (rapide, réponse classique)
+  // Recherche en arrière-plan déjà lancée pour ce lien ?
+  const status = await cacheGet(cache, statusKey(target.href));
+  if (status?.state === 'failed') return json({ ...(status.partial || {}), error: status.partial?.name ? undefined : 'unreadable', source: status.partial?.name ? 'partial' : undefined, tried: status.tried });
+  const running = status?.state === 'running' && Date.now() - status.t < RUN_TTL * 1000;
+  if (isPoll) return json(running ? { pending: true } : { error: 'expired' });
+  if (running) return json({ pending: true });
+
+  // 2. Lecture directe
   const direct = await viaDirect(target, 2500);
-  tried.push('direct:' + (direct.error || 'ok'));
-  if (isComplete(direct)) return json({ ...direct, source: 'direct' }, 200, true);
-
-  // 2 et 3. Chemin lent en streaming
-  const enc = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      controller.enqueue(enc.encode(' '));
-      const keepAlive = setInterval(() => { try { controller.enqueue(enc.encode(' ')); } catch {} }, 5000);
-      let result;
-      try {
-        result = await slowPath(target, direct, tried, left);
-      } catch {
-        result = { error: 'internal', tried };
-      }
-      clearInterval(keepAlive);
-      if (isComplete(result)) {
-        const { tried: _t, ...clean } = result;
-        await cache?.put(cacheKey, new Response(JSON.stringify(clean), {
-          headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=604800' },
-        })).catch(() => {});
-      }
-      controller.enqueue(enc.encode(JSON.stringify(result)));
-      controller.close();
-    },
-  });
-  return new Response(stream, {
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-  });
-};
-
-async function openCache() {
-  try { return typeof caches !== 'undefined' ? await caches.open('product-meta') : null; } catch { return null; }
-}
-
-async function slowPath(target, direct, tried, left) {
-  let best = usable(direct) ? direct : null;
-  let source = best ? 'direct' : null;
-
-  // 2. Zyte : navigateur hébergé + anti-bot, comble ce qui manque (souvent le prix)
-  if (process.env.ZYTE_API_KEY && left() > 8000) {
-    const z = await viaZyte(target.href, Math.min(left() - 6000, 45000));
-    tried.push('zyte:' + (z.error || 'ok'));
-    if (!z.error) {
-      best = mergeResults(best, z);
-      source = 'zyte';
-      if (isComplete(best)) return { ...best, source };
-    }
+  if (isComplete(direct)) {
+    await cachePut(cache, resultKey(target.href), { ...direct, source: 'direct' }, 604800);
+    return json({ ...direct, source: 'direct' }, 200, true);
   }
 
-  // 3. Microlink, seulement si on n'a toujours pas l'essentiel
-  if (!isGood(best) && left() > 3000) {
-    const ml = await viaMicrolink(target.href, left() - 500);
-    tried.push('microlink:' + (ml.error || 'ok'));
-    if (!ml.error) {
-      best = mergeResults(best, ml);
-      source = 'microlink';
-    }
-  }
-
-  if (isGood(best)) return { ...best, source, tried };
-  if (best?.name) return { ...best, source: 'partial', tried };
-  return { error: 'unreadable', tried };
-}
-
-function usable(r) { return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name)); }
-function isGood(r) { return usable(r) && !!(r.price || r.image); }
-function isComplete(r) { return usable(r) && !!r.price && !!r.image; }
-
-// Garde les valeurs déjà trouvées, complète avec la nouvelle source
-function mergeResults(a, b) {
-  const base = usable(a) ? a : {};
-  const out = {};
-  for (const k of ['name', 'price', 'image', 'site', 'brand', 'ref']) out[k] = base[k] ?? b?.[k] ?? null;
-  return out;
-}
-
-async function viaDirect(target, ms) {
+  // 3. Arrière-plan
+  const partial = usable(direct) ? direct : null;
+  await cachePut(cache, statusKey(target.href), { state: 'running', t: Date.now() }, RUN_TTL);
   try {
-    const res = await fetch(target, {
-      headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'fr-FR,fr;q=0.9' },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(ms),
-    });
-    if (!res.ok) return { error: 'http_' + res.status };
-    const html = (await res.text()).slice(0, 2_000_000);
-    return extract(html, res.url || target.href);
-  } catch {
-    return { error: 'timeout' };
-  }
-}
-
-async function viaZyte(pageUrl, ms) {
-  try {
-    const res = await fetch('https://api.zyte.com/v1/extract', {
+    const bg = await fetch(`${reqUrl.origin}/.netlify/functions/product-meta-bg`, {
       method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(process.env.ZYTE_API_KEY + ':'),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: pageUrl,
-        product: true,
-        // Rendu dans un vrai navigateur (défaut Zyte) : nécessaire pour passer les murs anti-bot
-      }),
-      signal: AbortSignal.timeout(ms),
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url: target.href, partial, directError: direct.error || null }),
+      signal: AbortSignal.timeout(5000),
     });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) return { error: 'http_' + res.status + (body.type ? '_' + String(body.type).split('/').pop() : '') };
-    const p = body.product;
-    if (!p || !p.name) return { error: 'no_product' };
-    return {
-      name: cleanName(p.name, null, pageUrl),
-      price: parsePrice(p.price),
-      image: p.mainImage?.url || p.images?.[0]?.url || null,
-      site: siteFromHost(pageUrl),
-      brand: p.brand?.name || null,
-      ref: p.sku || p.mpn || p.productId || null,
-    };
-  } catch {
-    return { error: 'timeout' };
+    if (bg.status !== 202 && !bg.ok) throw new Error('bg_' + bg.status);
+  } catch (e) {
+    await cachePut(cache, statusKey(target.href), { state: 'failed', partial, tried: ['bg:' + (e.message || 'launch')] }, 60);
+    return json(partial ? { ...partial, source: 'partial' } : { error: 'unreadable', tried: ['direct:' + direct.error, 'bg:launch'] });
   }
-}
-
-async function viaMicrolink(pageUrl, ms) {
-  const key = process.env.MICROLINK_API_KEY;
-  const q = new URLSearchParams({
-    url: pageUrl,
-    'data.ld.selectorAll': 'script[type="application/ld+json"]',
-    'data.ld.attr': 'html',
-    'data.price.selector': 'meta[property="product:price:amount"],meta[property="og:price:amount"],meta[itemprop="price"]',
-    'data.price.attr': 'content',
-  });
-  try {
-    const res = await fetch(`https://${key ? 'pro' : 'api'}.microlink.io/?${q}`, {
-      headers: key ? { 'x-api-key': key } : {},
-      signal: AbortSignal.timeout(ms),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok || body.status !== 'success') return { error: 'http_' + (body.code || res.status) };
-    const d = body.data || {};
-
-    // On reconstruit un mini-HTML pour réutiliser exactement le même extracteur
-    let html = [].concat(d.ld || []).filter(Boolean)
-      .map(s => `<script type="application/ld+json">${s}</script>`).join('');
-    if (d.price) html += `<meta property="product:price:amount" content="${String(d.price).replace(/"/g, '')}">`;
-    const r = extract(html, pageUrl);
-
-    r.name = r.name || cleanName(d.title, d.publisher, pageUrl);
-    r.image = r.image || d.image?.url || null;
-    r.site = r.site || d.publisher || siteFromHost(pageUrl);
-    return r;
-  } catch {
-    return { error: 'timeout' };
-  }
-}
-
-const SITE_NAMES = {
-  ikea: 'IKEA', maisonsdumonde: 'Maisons du Monde', laredoute: 'La Redoute', ampm: 'AM.PM',
-  leroymerlin: 'Leroy Merlin', castorama: 'Castorama', conforama: 'Conforama', but: 'BUT',
-  habitat: 'Habitat', westwing: 'Westwing', manomano: 'ManoMano', bricodepot: 'Brico Dépôt',
-  zarahome: 'Zara Home', hm: 'H&M Home', fermlivingfr: 'ferm LIVING', made: 'Made.com',
-  sklum: 'Sklum', kavehome: 'Kave Home', amazon: 'Amazon', cdiscount: 'Cdiscount',
-  boulanger: 'Boulanger', darty: 'Darty', fnac: 'Fnac', alinea: 'Alinéa', gifi: 'Gifi',
+  return json({ ...(partial || {}), pending: true });
 };
-function siteFromHost(pageUrl) {
-  const h = new URL(pageUrl).hostname.replace(/^(www\d?|m|fr)\./, '').split('.')[0].replace(/-/g, '');
-  return SITE_NAMES[h] || h.charAt(0).toUpperCase() + h.slice(1);
-}
 
 function json(obj, status = 200, cache = false) {
+  for (const k of Object.keys(obj)) if (obj[k] === undefined) delete obj[k];
   const headers = { 'content-type': 'application/json; charset=utf-8', 'netlify-vary': 'query=url' };
   if (cache) {
     headers['cache-control'] = 'public, max-age=86400';
@@ -221,98 +69,4 @@ function json(obj, status = 200, cache = false) {
     headers['cache-control'] = 'no-store';
   }
   return new Response(JSON.stringify(obj), { status, headers });
-}
-
-// ─── Extraction ────────────────────────────────────────────────
-
-function extract(html, pageUrl) {
-  let p = null;
-  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
-    try { p = findProduct(JSON.parse(m[1].trim())); if (p) break; } catch { /* JSON-LD invalide, on continue */ }
-  }
-  if (p && p.hasVariant && !p.offers) p = { ...p, offers: [].concat(p.hasVariant)[0]?.offers };
-
-  const offer = [].concat(p?.offers || [])[0] || {};
-  const priceRaw = offer.price ?? offer.lowPrice ?? offer.priceSpecification?.price
-    ?? meta(html, 'product:price:amount') ?? meta(html, 'og:price:amount') ?? meta(html, 'price')
-    ?? (p || meta(html, 'og:type') === 'product' ? dataLayerPrice(html) : null);
-
-  const ldImg = [].concat(p?.image || [])[0];
-  const image = (typeof ldImg === 'object' ? ldImg?.url || ldImg?.contentUrl : ldImg)
-    || meta(html, 'og:image') || meta(html, 'twitter:image');
-
-  const site = meta(html, 'og:site_name') || null;
-  const brand = typeof p?.brand === 'object' ? p.brand?.name : p?.brand;
-  const name = p?.name || meta(html, 'og:title') || html.match(/<title[^>]*>([^<]*)/i)?.[1];
-
-  return {
-    name: cleanName(decode(name), site, pageUrl),
-    price: parsePrice(priceRaw),
-    image: absolutize(decode(image), pageUrl),
-    site: decode(site),
-    brand: decode(brand) || null,
-    ref: p?.sku || p?.mpn || p?.productID || null,
-  };
-}
-
-// Prix présent seulement dans un objet JS embarqué (data layer type Tealium, ex. IKEA : "price":["549"])
-function dataLayerPrice(html) {
-  const m = html.match(/"(?:product_)?price"\s*:\s*\[\s*"(\d+(?:[.,]\d{1,2})?)"/)
-    || html.match(/"(?:product_price|productPrice|price_ttc)"\s*:\s*"?(\d+(?:[.,]\d{1,2})?)/);
-  return m ? m[1] : null;
-}
-
-function findProduct(node) {
-  if (!node || typeof node !== 'object') return null;
-  if (Array.isArray(node)) { for (const n of node) { const r = findProduct(n); if (r) return r; } return null; }
-  const t = [].concat(node['@type'] || []);
-  if (t.includes('Product') || t.includes('ProductGroup')) return node;
-  if (node['@graph']) return findProduct(node['@graph']);
-  if (node.mainEntity) return findProduct(node.mainEntity);
-  return null;
-}
-
-function meta(html, key) {
-  const re = new RegExp(`<meta[^>]+(?:property|name|itemprop)=["']${key}["'][^>]*>`, 'i');
-  const tag = html.match(re)?.[0];
-  return tag?.match(/content=["']([^"']*)["']/i)?.[1] || null;
-}
-
-function parsePrice(v) {
-  if (v == null || v === '') return null;
-  let s = String(v).replace(/[^\d.,]/g, '');
-  if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.'); // 1.299,00
-  else s = s.replace(',', '.');                                                       // 1299,00
-  const n = parseFloat(s);
-  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
-}
-
-// Retire le suffixe " | IKEA", " - Maisons du Monde", etc. seulement s'il correspond à l'enseigne
-function cleanName(name, site, pageUrl) {
-  if (!name) return null;
-  let n = name.replace(/\s+/g, ' ').trim();
-  const host = new URL(pageUrl).hostname.replace(/^www\./, '').split('.')[0];
-  const parts = n.split(/\s[|–—-]\s/);
-  if (parts.length > 1) {
-    const last = parts[parts.length - 1].toLowerCase().replace(/\s/g, '');
-    if (last.includes(host.toLowerCase()) || (site && last.includes(site.toLowerCase().replace(/\s/g, '')))) {
-      n = parts.slice(0, -1).join(' - ');
-    }
-  }
-  return n.slice(0, 100);
-}
-
-function absolutize(u, base) {
-  if (!u) return null;
-  try { return new URL(u, base).href; } catch { return null; }
-}
-
-function decode(s) {
-  if (!s) return s;
-  return String(s)
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(d))
-    .replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'")
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-    .trim();
 }
