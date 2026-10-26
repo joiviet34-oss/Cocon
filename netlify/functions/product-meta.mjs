@@ -4,15 +4,19 @@
 //
 // Chaîne de récupération, du moins cher au plus robuste :
 //   1. Lecture directe de la page (gratuit, ~1 s) : JSON-LD Product > og: > <title>
-//   2. Zyte API, extraction produit automatique (si ZYTE_API_KEY est définie) :
+//   2. Zyte API, extraction produit automatique en navigateur (si ZYTE_API_KEY est définie) :
 //      proxies, contournement anti-bot et IA d'extraction gérés par Zyte.
 //   3. Microlink en dernier recours (MICROLINK_API_KEY optionnelle, sinon quota gratuit).
-// Les résultats réussis sont mis en cache 7 jours sur le CDN Netlify :
+// Les résultats complets sont mis en cache 7 jours (CDN + Cache API Netlify) :
 // un même lien collé deux fois ne coûte qu'un seul appel payant.
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
 const BLOCKED_NAME = /access denied|accès refusé|captcha|robot|un instant|just a moment|attention required|forbidden|pardon our interruption/i;
-const BUDGET_MS = 45000; // les fonctions synchrones Netlify ont 60 s ; on garde de la marge
+const BUDGET_MS = 54000; // limite Netlify des réponses en streaming : 60 s
+
+// Netlify coupe une réponse qui n'envoie aucun octet pendant 30 s ("Inactivity Timeout").
+// Le chemin lent (Zyte, Microlink) répond donc en streaming : un espace toutes les 5 s
+// garde la connexion ouverte, puis le JSON final. JSON.parse ignore les espaces en tête.
 
 export default async (req) => {
   const t0 = Date.now();
@@ -28,23 +32,63 @@ export default async (req) => {
     return json({ error: 'forbidden' }, 400);
   }
 
+  // Résultat déjà connu pour ce lien (cache Netlify, 7 jours) : réponse immédiate, aucun appel payant
+  const cacheKey = new Request('https://product-meta.cache/?url=' + encodeURIComponent(target.href));
+  const cache = await openCache();
+  const hit = await cache?.match(cacheKey).catch(() => null);
+  if (hit) return json({ ...(await hit.json()), cached: true }, 200, true);
+
   const tried = [];
 
-  // 1. Lecture directe
+  // 1. Lecture directe (rapide, réponse classique)
   const direct = await viaDirect(target, 2500);
   tried.push('direct:' + (direct.error || 'ok'));
   if (isComplete(direct)) return json({ ...direct, source: 'direct' }, 200, true);
+
+  // 2 et 3. Chemin lent en streaming
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(enc.encode(' '));
+      const keepAlive = setInterval(() => { try { controller.enqueue(enc.encode(' ')); } catch {} }, 5000);
+      let result;
+      try {
+        result = await slowPath(target, direct, tried, left);
+      } catch {
+        result = { error: 'internal', tried };
+      }
+      clearInterval(keepAlive);
+      if (isComplete(result)) {
+        const { tried: _t, ...clean } = result;
+        await cache?.put(cacheKey, new Response(JSON.stringify(clean), {
+          headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=604800' },
+        })).catch(() => {});
+      }
+      controller.enqueue(enc.encode(JSON.stringify(result)));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+  });
+};
+
+async function openCache() {
+  try { return typeof caches !== 'undefined' ? await caches.open('product-meta') : null; } catch { return null; }
+}
+
+async function slowPath(target, direct, tried, left) {
   let best = usable(direct) ? direct : null;
   let source = best ? 'direct' : null;
 
   // 2. Zyte : navigateur hébergé + anti-bot, comble ce qui manque (souvent le prix)
   if (process.env.ZYTE_API_KEY && left() > 8000) {
-    const z = await viaZyte(target.href, Math.min(left() - 8000, 35000));
+    const z = await viaZyte(target.href, Math.min(left() - 6000, 45000));
     tried.push('zyte:' + (z.error || 'ok'));
     if (!z.error) {
       best = mergeResults(best, z);
       source = 'zyte';
-      if (isComplete(best)) return json({ ...best, source }, 200, true);
+      if (isComplete(best)) return { ...best, source };
     }
   }
 
@@ -58,10 +102,10 @@ export default async (req) => {
     }
   }
 
-  if (isGood(best)) return json({ ...best, source, tried }, 200, isComplete(best));
-  if (best?.name) return json({ ...best, source: 'partial', tried });
-  return json({ error: 'unreadable', tried });
-};
+  if (isGood(best)) return { ...best, source, tried };
+  if (best?.name) return { ...best, source: 'partial', tried };
+  return { error: 'unreadable', tried };
+}
 
 function usable(r) { return !!(r && !r.error && r.name && !BLOCKED_NAME.test(r.name)); }
 function isGood(r) { return usable(r) && !!(r.price || r.image); }
