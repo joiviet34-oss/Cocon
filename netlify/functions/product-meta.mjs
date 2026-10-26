@@ -13,7 +13,7 @@
 import { parseTarget, openCache, resultKey, statusKey, cacheGet, cachePut,
          viaDirect, usable, isComplete } from '../lib/product-extract.mjs';
 
-const RUN_TTL = 150; // une recherche en arrière-plan est considérée en cours pendant 150 s max
+const RUN_TTL = 300; // une recherche en arrière-plan est considérée en cours pendant 5 min max
 
 export default async (req) => {
   const reqUrl = new URL(req.url);

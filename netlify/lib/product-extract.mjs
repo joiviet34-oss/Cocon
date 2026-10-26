@@ -75,11 +75,13 @@ export async function viaZyte(pageUrl, ms) {
         url: pageUrl,
         product: true,
         // Rendu dans un vrai navigateur (défaut Zyte) : nécessaire pour passer les murs anti-bot
+        // Sortie depuis une IP française : les sites FR bloquent ou redirigent souvent l'étranger
+        geolocation: 'FR',
       }),
       signal: AbortSignal.timeout(ms),
     });
     const body = await res.json().catch(() => ({}));
-    if (!res.ok) return { error: 'http_' + res.status + (body.type ? '_' + String(body.type).split('/').pop() : '') };
+    if (!res.ok) return { error: 'http_' + res.status + (body.type ? '_' + String(body.type).split('/').pop() : ''), retryable: res.status === 520 || res.status === 521 };
     const p = body.product;
     if (!p || !p.name) return { error: 'no_product' };
     return {

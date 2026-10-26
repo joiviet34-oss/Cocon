@@ -1953,7 +1953,7 @@ let smartLinkTimeout = null;
 let smartLinkSeq = 0;
 
 // Interroge la fonction serveur. Si le site est protégé, elle répond { pending: true }
-// et continue en arrière-plan : on la rappelle toutes les 3 s (90 s max).
+// et continue en arrière-plan : on la rappelle toutes les 3 s (5 min max).
 let smartLinkJob = null; // { url, promise, done }
 
 function fetchProductMeta(url, onPending) {
@@ -1963,7 +1963,7 @@ function fetchProductMeta(url, onPending) {
         try {
             let r = await fetch(endpoint, { signal: AbortSignal.timeout(28000) });
             let d = await r.json();
-            const until = Date.now() + 90000;
+            const until = Date.now() + 300000;
             while (d.pending && Date.now() < until) {
                 onPending?.(d);
                 await new Promise(res => setTimeout(res, 3000));

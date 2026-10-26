@@ -18,9 +18,15 @@ export default async (req) => {
   let source = best ? 'direct' : null;
 
   if (process.env.ZYTE_API_KEY) {
-    const z = await viaZyte(target.href, 110000);
-    tried.push('zyte:' + (z.error || 'ok'));
-    if (!z.error) { best = mergeResults(best, z); source = 'zyte'; }
+    // Zyte recommande de réessayer les 520 (ban non contourné à temps) : 3 essais max, ~4 min au total
+    const deadline = Date.now() + 240000;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const z = await viaZyte(target.href, Math.min(100000, deadline - Date.now()));
+      tried.push(`zyte${attempt > 1 ? '#' + attempt : ''}:` + (z.error || 'ok'));
+      if (!z.error) { best = mergeResults(best, z); source = 'zyte'; break; }
+      if (!z.retryable || deadline - Date.now() < 30000) break;
+      await new Promise(r => setTimeout(r, 3000 * attempt + Math.random() * 2000));
+    }
   }
 
   if (!isComplete(best)) {
