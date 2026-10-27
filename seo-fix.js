@@ -3,8 +3,8 @@
  * seo-fix.js — Correction SEO en masse des articles de blog Cocon
  *
  * Usage, depuis la racine du repo :
- *   node seo-fix.js ./blog --dry     (simulation, n'écrit rien)
- *   node seo-fix.js ./blog           (applique)
+ *   node seo-fix.js ./public/blog --dry     (simulation, n'écrit rien)
+ *   node seo-fix.js ./public/blog           (applique)
  *
  * Idempotent : relancer le script ne duplique rien.
  *
@@ -27,7 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const { AUTHOR, FAQ, IMAGES } = require('./seo-data.js');
 
-const DIR = process.argv[2] || './blog';
+const DIR = process.argv[2] || './public/blog';
 const DRY = process.argv.includes('--dry');
 const SITE = 'https://cocon-app.fr';
 const IMG_BASE = '/blog/img/';
@@ -269,7 +269,7 @@ function processIndex(file){
 }
 
 function updateSitemap(){
-  const candidates = ['sitemap.xml', path.join(path.dirname(DIR), 'sitemap.xml')];
+  const candidates = [path.join(path.dirname(DIR), 'sitemap.xml'), 'public/sitemap.xml'];
   const target = candidates.find(fs.existsSync);
   if(!target){ console.log('\nsitemap.xml introuvable, ignoré'); return; }
   let xml = fs.readFileSync(target, 'utf8');
@@ -285,5 +285,5 @@ files.forEach(f => { if(processFile(path.join(DIR, f))) n++; });
 processIndex(path.join(DIR,'index.html'));
 updateSitemap();
 console.log(`\n${n}/${files.length} fichiers modifiés.`);
-console.log(`Images attendues dans ${DIR}/img/ (voir images-a-produire.md).`);
+console.log(`Images attendues dans ${DIR}/img/ (voir docs/images-a-produire.md).`);
 console.log(`Les emplacements sans fichier image se masquent tout seuls, rien ne casse en prod.\n`);
