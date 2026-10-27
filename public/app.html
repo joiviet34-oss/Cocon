@@ -133,6 +133,7 @@
                 </div>
                 <div class="user-dropdown" id="user-dropdown">
                     <a href="/blog" target="_blank">📝 Blog déco</a>
+                    <a href="#" onclick="event.preventDefault(); showNewsModal()">✨ Nouveautés <span class="news-menu-dot" style="display:none"></span></a>
                     <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
@@ -153,6 +154,9 @@
                     Nouveau projet
                 </button>
             </div>
+
+            <!-- Encart Nouveautés (rempli par renderNews) -->
+            <section class="news-card" id="news-card" style="display:none" aria-live="polite"></section>
 
             <div id="projects-grid" class="projects-grid">
                 <!-- Projects rendered by JS -->
@@ -200,6 +204,7 @@
                 <div class="user-dropdown" id="user-dropdown-2">
                     <a href="#" onclick="showDashboard()">Mes projets</a>
                     <a href="/blog" target="_blank">📝 Blog déco</a>
+                    <a href="#" onclick="event.preventDefault(); showNewsModal()">✨ Nouveautés <span class="news-menu-dot" style="display:none"></span></a>
                     <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
@@ -813,6 +818,17 @@
 
     <!-- Toast -->
     <div id="toast" class="toast"></div>
+
+    <!-- Historique des nouveautés -->
+    <div class="modal-overlay" id="modal-news" onclick="closeModal(event, 'modal-news')">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>✨ Nouveautés</h3>
+                <button class="modal-close" aria-label="Fermer" onclick="closeModalById('modal-news')">&times;</button>
+            </div>
+            <div class="news-list" id="news-list"></div>
+        </div>
+    </div>
 
     <!-- Produit reçu du bouton « Ajouter à Cocon » -->
     <div class="clip-tray" id="clip-tray" style="display:none" role="status">

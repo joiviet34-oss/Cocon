@@ -39,6 +39,7 @@ async function showDashboard() {
     allItems = [];
     cleanupListeners();
     loadProjects();
+    loadUserProfile().then(renderNews);
 }
 
 async function loadProjects() {
@@ -2068,6 +2069,117 @@ function enrichItemWhenReady(docRef, saved) {
     });
 }
 
+// ─── NOUVEAUTÉS ──────────────────────────────────────────────
+// Les annonces vivent ici, la plus récente en premier. Ce que l'utilisateur a déjà vu
+// est enregistré dans son profil Firestore (users/{uid}.seenNews) : suivi d'un appareil à l'autre.
+const ANNOUNCEMENTS = [
+    {
+        id: 'bouton-ajouter-2026-10',
+        date: '2026-10-27',
+        title: 'Ajoutez un produit depuis n\'importe quel site',
+        text: 'Sur une fiche Maisons du Monde, La Redoute ou IKEA, un clic sur le bouton Ajouter à Cocon suffit. Le nom, le prix et la photo arrivent tout seuls dans la pièce de votre choix.',
+        textMobile: 'Collez le lien d\'un produit dans Cocon : le nom, le prix et la photo se remplissent seuls. Sur ordinateur, installez aussi le bouton Ajouter à Cocon pour ajouter en un clic.',
+        cta: { label: 'Installer le bouton', action: 'install' },
+        skipIf: 'buttonInstalled',
+    },
+];
+
+let userProfile = null;
+const isTouchDevice = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+async function loadUserProfile() {
+    if (!currentUser || currentUser.isAnonymous) return null;
+    try {
+        const snap = await db.collection('users').doc(currentUser.uid).get();
+        userProfile = snap.exists ? snap.data() : {};
+    } catch (e) { console.warn('Profil illisible', e); userProfile = {}; }
+    return userProfile;
+}
+
+function updateUserProfile(patch) {
+    if (!currentUser || currentUser.isAnonymous) return;
+    userProfile = { ...(userProfile || {}), ...patch };
+    db.collection('users').doc(currentUser.uid).set(patch, { merge: true })
+        .catch(e => console.warn('Profil non enregistré', e));
+}
+
+function unseenNews() {
+    if (!userProfile) return [];
+    const seen = userProfile.seenNews || [];
+    return ANNOUNCEMENTS.filter(a => !seen.includes(a.id) && !(a.skipIf && userProfile[a.skipIf]));
+}
+
+function markNewsSeen(id) {
+    const seen = new Set((userProfile && userProfile.seenNews) || []);
+    seen.add(id);
+    updateUserProfile({ seenNews: [...seen] });
+    renderNews();
+}
+
+function newsText(a) { return isTouchDevice() && a.textMobile ? a.textMobile : a.text; }
+
+function renderNews() {
+    const pending = unseenNews();
+    document.querySelectorAll('.user-avatar').forEach(el => el.classList.toggle('has-news', pending.length > 0));
+    document.querySelectorAll('.news-menu-dot').forEach(el => el.style.display = pending.length ? '' : 'none');
+
+    const card = document.getElementById('news-card');
+    if (!card) return;
+    const a = pending[0];
+    if (!a) { card.style.display = 'none'; card.innerHTML = ''; return; }
+    const showCta = a.cta && !(a.cta.action === 'install' && isTouchDevice());
+    card.innerHTML = `
+        <span class="news-card-badge">Nouveau</span>
+        <div class="news-card-body">
+            <div class="news-card-title">${escHtml(a.title)}</div>
+            <div class="news-card-text">${escHtml(newsText(a))}</div>
+        </div>
+        <div class="news-card-actions">
+            ${showCta ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
+            <button class="news-later" onclick="dismissNews('${a.id}')">${showCta ? 'Plus tard' : 'Compris'}</button>
+        </div>`;
+    if (card.style.display === 'none' || card.dataset.shown !== a.id) {
+        card.dataset.shown = a.id;
+        track('announcement_view', { id: a.id });
+    }
+    card.style.display = '';
+}
+
+function newsAction(id) {
+    const a = ANNOUNCEMENTS.find(x => x.id === id);
+    if (!a) return;
+    track('announcement_click', { id });
+    markNewsSeen(id);
+    if (a.cta.action === 'install') {
+        track('install_open', { from: 'news' });
+        window.open('/ajouter', '_blank');
+    }
+}
+
+function dismissNews(id) {
+    track('announcement_dismiss', { id });
+    markNewsSeen(id);
+}
+
+function showNewsModal() {
+    document.querySelectorAll('.user-dropdown.open').forEach(d => d.classList.remove('open'));
+    const list = document.getElementById('news-list');
+    const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    list.innerHTML = ANNOUNCEMENTS.map(a => `
+        <article class="news-item">
+            <div class="news-item-date">${escHtml(fmt(a.date))}</div>
+            <div class="news-item-title">${escHtml(a.title)}</div>
+            <div class="news-item-text">${escHtml(newsText(a))}</div>
+            ${a.cta && !(a.cta.action === 'install' && isTouchDevice()) ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
+        </article>`).join('');
+    document.getElementById('modal-news').classList.add('active');
+    // Ouvrir l'historique vaut lecture de tout
+    const seen = new Set((userProfile && userProfile.seenNews) || []);
+    const before = seen.size;
+    ANNOUNCEMENTS.forEach(a => seen.add(a.id));
+    if (seen.size !== before) { updateUserProfile({ seenNews: [...seen] }); renderNews(); }
+}
+
 // ─── BOUTON « AJOUTER À COCON » (lecture dans le navigateur de l'utilisateur) ───
 // Le favori lit la fiche produit sur le site du marchand et ouvre /app?clip=<données>.
 // On garde le produit en attente (même après connexion) jusqu'à ce que l'utilisateur
@@ -2151,6 +2263,7 @@ function addClipToRoom() {
     const d = { name: clipName(c), price: clipPrice(c.p), image: c.i || null, site: clipSite(c), ref: c.r || null };
     const filled = applyProductMeta(d);
     itemAddMethod = 'bouton';
+    if (!userProfile || !userProfile.buttonInstalled) updateUserProfile({ buttonInstalled: true });
     const hint = document.getElementById('smart-link-hint');
     hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''} depuis la page` : '';
     hint.className = 'smart-link-hint success';
