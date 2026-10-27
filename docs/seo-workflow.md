@@ -29,16 +29,18 @@ Français, vouvoiement, aucun tiret cadratin ni point médian. Cocon cité 1 à 
 - **Ensuite** : retravailler les titres des pages déjà en page 1 sans clic (quelle-couleur-pour-un-salon, tricount-renovation-deco).
 
 ## Déploiement beta
-La beta (https://beta--ephemeral-syrniki-e31b2e.netlify.app) ne doit jamais être indexée. Le noindex vient d'un fichier `_headers` généré au build pour les seuls contextes deploy-preview et branch-deploy (voir netlify.toml).
+La beta (https://beta--ephemeral-syrniki-e31b2e.netlify.app) ne doit jamais être indexée. Le noindex vient d'un fichier `public/_headers` généré au build pour les seuls contextes deploy-preview et branch-deploy (voir netlify.toml).
 1. La beta se déploie **uniquement** avec :
    `netlify deploy --build --context deploy-preview --alias beta`
-   Sans `--build`, le `_headers` n'est pas généré et la beta part sans noindex.
+   Sans `--build`, le `public/_headers` n'est pas généré et la beta part sans noindex.
 2. Après chaque déploiement, `curl -I https://beta--ephemeral-syrniki-e31b2e.netlify.app/` : l'en-tête `X-Robots-Tag: noindex` doit être présent. S'il manque, le signaler immédiatement à Al.
 3. `curl -I https://cocon-app.fr/` : l'en-tête `X-Robots-Tag` doit être **absent**. S'il est présent, le signaler immédiatement : la production est en noindex.
-4. Supprimer le `_headers` généré en local après le déploiement (`rm -f _headers`), pour qu'il ne parte jamais en production.
+4. Supprimer le `public/_headers` généré en local après le déploiement (`rm -f public/_headers`), pour qu'il ne parte jamais en production.
 
 ## Rapports et documents internes
-Le site est publié depuis la racine du repo : tout fichier poussé sur main est public sur cocon-app.fr. Les rapports SEO vont dans ~/cocon-growth/reviews/, jamais dans le repo du site (reviews/ est dans .gitignore). /docs/, /reviews/ et /CLAUDE.md renvoient un 404 forcé (netlify.toml).
+Seul le dossier `public/` est publié sur cocon-app.fr (`publish = "public"` dans netlify.toml). Les pages, le blog, css/, js/, img/, robots.txt et sitemap.xml vivent dans `public/` : c'est là qu'on crée ou modifie un article (`public/blog/<slug>.html`) et qu'on met à jour `public/sitemap.xml`. Tout le reste du repo (docs/, scripts/, seo-*.js, firestore.rules, CLAUDE.md) n'est jamais servi. Ne jamais placer dans `public/` un fichier interne (notes, scripts, règles, config). Les rapports SEO vont dans ~/cocon-growth/reviews/, jamais dans le repo du site (reviews/ est dans .gitignore). Filet de sécurité : /docs/, /reviews/ et /CLAUDE.md renvoient un 404 forcé (netlify.toml).
+
+Script de correction en masse : `node seo-fix.js ./public/blog --dry` (simulation), puis sans `--dry`.
 
 ## Interdits
 - Ne jamais utiliser netlify deploy --prod, merger dans main ou pousser sur main sans un message explicite « OK prod ».
