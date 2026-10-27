@@ -133,6 +133,7 @@
                 </div>
                 <div class="user-dropdown" id="user-dropdown">
                     <a href="/blog" target="_blank">📝 Blog déco</a>
+                    <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
                     <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">
@@ -199,6 +200,7 @@
                 <div class="user-dropdown" id="user-dropdown-2">
                     <a href="#" onclick="showDashboard()">Mes projets</a>
                     <a href="/blog" target="_blank">📝 Blog déco</a>
+                    <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
                     <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">
@@ -520,6 +522,10 @@
             </div>
             <form onsubmit="saveItem(event)">
                 <input type="hidden" id="item-edit-id" value="">
+                <div class="form-group">
+                    <label>🔗 Lien <span class="smart-link-hint" id="smart-link-hint"></span></label>
+                    <input type="url" id="item-input-link" placeholder="https://www.ikea.com/… — collez un lien, on pré-remplit !" oninput="handleSmartLink(this.value)">
+                </div>
 
                 <div class="form-group">
                     <label>Image</label>
@@ -579,10 +585,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>🔗 Lien <span class="smart-link-hint" id="smart-link-hint"></span></label>
-                    <input type="url" id="item-input-link" placeholder="https://www.ikea.com/… — collez un lien, on pré-remplit !" oninput="handleSmartLink(this.value)">
-                </div>
 
                 <div class="form-row">
                     <div class="form-group">
@@ -811,6 +813,17 @@
 
     <!-- Toast -->
     <div id="toast" class="toast"></div>
+
+    <!-- Produit reçu du bouton « Ajouter à Cocon » -->
+    <div class="clip-tray" id="clip-tray" style="display:none" role="status">
+        <img class="clip-tray-img" id="clip-tray-img" alt="">
+        <div class="clip-tray-info">
+            <div class="clip-tray-name" id="clip-tray-name"></div>
+            <div class="clip-tray-meta" id="clip-tray-meta"></div>
+        </div>
+        <button class="btn-primary-app clip-tray-add" id="clip-tray-add" onclick="addClipToRoom()">Ajouter à cette pièce</button>
+        <button class="clip-tray-close" aria-label="Ignorer ce produit" onclick="dismissClip()">&times;</button>
+    </div>
 
     <!-- Delete Account Modal -->
     <div class="modal-overlay" id="modal-delete-account" onclick="closeModal(event, 'modal-delete-account')">

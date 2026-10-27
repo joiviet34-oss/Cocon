@@ -11,6 +11,13 @@ let unsubProject = null;
 let unsubItems = null;
 let unsubComments = null;
 
+// ─── MESURE (GA4) ────────────────────────────────────────────
+// Événements d'usage : n'échoue jamais, même si GA est bloqué par l'utilisateur.
+function track(name, params = {}) {
+    try { if (typeof gtag === 'function') gtag('event', name, params); } catch {}
+}
+let itemAddMethod = 'manuel'; // 'manuel' | 'lien' | 'bouton' : comment le produit en cours a été rempli
+
 // ─── SCREEN MANAGEMENT ───────────────────────────────────────
 
 function showScreen(id) {
@@ -452,6 +459,8 @@ function showAddItemModal(editItem = null) {
     const modal = document.getElementById('modal-add-item');
     modal.classList.add('active');
     resetItemImagePreview();
+    resetSmartLinkState();
+    itemAddMethod = 'manuel';
     populatePaidByOptions();
 
     if (editItem) {
@@ -529,14 +538,18 @@ async function saveItem(e) {
 
     const itemsRef = db.collection('projects').doc(currentProject.id).collection('items');
 
+    let savedRef;
     if (editId) {
-        await itemsRef.doc(editId).update(data);
+        savedRef = itemsRef.doc(editId);
+        await savedRef.update(data);
         toast('Élément mis à jour');
     } else {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        await itemsRef.add(data);
+        savedRef = await itemsRef.add(data);
         toast('Élément ajouté !');
+        track('item_added', { method: itemAddMethod });
     }
+    enrichItemWhenReady(savedRef, data);
 
     closeModalById('modal-add-item');
     submitBtn.disabled = false;
@@ -1427,8 +1440,14 @@ async function exportPDF() {
 
 // ─── MODALS ──────────────────────────────────────────────────
 
+// Ne ferme que si le clic a AUSSI commencé sur l'overlay : sinon, sélectionner
+// le texte d'un champ en glissant et relâcher hors de la carte fermait la popup.
+let modalPointerDownTarget = null;
+document.addEventListener('pointerdown', e => { modalPointerDownTarget = e.target; }, true);
+
 function closeModal(event, id) {
-    if (event.target === document.getElementById(id)) closeModalById(id);
+    const overlay = document.getElementById(id);
+    if (event.target === overlay && modalPointerDownTarget === overlay) closeModalById(id);
 }
 
 function closeModalById(id) {
@@ -1903,54 +1922,260 @@ function parseProductUrl(url) {
     }
 }
 
+// ─── SMART LINK v2 : vraie lecture de la page produit ───────
+// Un champ rempli automatiquement reste "auto" et peut être écrasé
+// par un meilleur résultat (ou un autre lien). Dès que l'utilisateur
+// le touche, il n'est plus jamais écrasé.
+
+const SL_FIELDS = {
+    name: 'item-input-name',
+    supplier: 'item-input-supplier',
+    ref: 'item-input-ref',
+    price: 'item-input-price',
+    category: 'item-input-category',
+};
+const SL_IDS = Object.values(SL_FIELDS);
+
+['input', 'change'].forEach(evt => document.addEventListener(evt, e => {
+    if (e.isTrusted && SL_IDS.includes(e.target.id)) e.target.dataset.auto = '0';
+}));
+
+function resetSmartLinkState() {
+    SL_IDS.concat('item-image-file-data').forEach(id => {
+        const el = document.getElementById(id);
+        if (el) delete el.dataset.auto;
+    });
+    smartLinkSeq++;
+}
+
+function slSet(key, value) {
+    const el = document.getElementById(SL_FIELDS[key]);
+    if (!el || value == null || value === '') return false;
+    if (el.value && el.dataset.auto !== '1') return false; // saisi par l'utilisateur
+    el.value = value;
+    el.dataset.auto = '1';
+    if (key === 'category') updateSubcategoryOptions();
+    return true;
+}
+
 let smartLinkTimeout = null;
+let smartLinkSeq = 0;
+
+// Interroge la fonction serveur. Si le site est protégé, elle répond { pending: true }
+// et continue en arrière-plan : on la rappelle toutes les 3 s (5 min max).
+let smartLinkJob = null; // { url, promise, done }
+
+function fetchProductMeta(url, onPending) {
+    const endpoint = '/.netlify/functions/product-meta?url=' + encodeURIComponent(url);
+    const job = { url, done: false };
+    job.promise = (async () => {
+        try {
+            let r = await fetch(endpoint, { signal: AbortSignal.timeout(28000) });
+            let d = await r.json();
+            const until = Date.now() + 300000;
+            while (d.pending && Date.now() < until) {
+                onPending?.(d);
+                await new Promise(res => setTimeout(res, 3000));
+                r = await fetch(endpoint + '&poll=1', { signal: AbortSignal.timeout(15000) });
+                d = await r.json();
+            }
+            if (d.pending) return { error: 'timeout' };
+            return d;
+        } catch { return { error: 'network' }; }
+        finally { job.done = true; }
+    })();
+    smartLinkJob = job;
+    return job.promise;
+}
+
+function applyProductMeta(d) {
+    const filled = [];
+    if (slSet('name', d.name)) filled.push('nom');
+    if (slSet('price', d.price)) filled.push('prix');
+    if (slSet('supplier', d.site)) filled.push('fournisseur');
+    if (slSet('ref', d.ref)) filled.push('réf');
+    const img = document.getElementById('item-image-file-data');
+    if (d.image && !pendingItemFile && (!img.value || img.dataset.auto === '1')) {
+        img.value = d.image;
+        img.dataset.auto = '1';
+        showItemImagePreview(d.image);
+        filled.push('photo');
+    }
+    return filled;
+}
+
 function handleSmartLink(url) {
     clearTimeout(smartLinkTimeout);
     const hint = document.getElementById('smart-link-hint');
-    
-    if (!url || url.length < 10) {
-        hint.textContent = '';
-        return;
-    }
-    
-    // Debounce 300ms
-    smartLinkTimeout = setTimeout(() => {
-        const parsed = parseProductUrl(url);
-        if (!parsed) {
-            hint.textContent = '';
+    url = (url || '').trim();
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) { hint.textContent = ''; return; }
+
+    smartLinkTimeout = setTimeout(async () => {
+        const seq = ++smartLinkSeq;
+
+        // a) Instantané : ce qu'on peut déduire de l'URL
+        const local = parseProductUrl(url) || {};
+        slSet('supplier', local.supplier);
+        slSet('name', local.name);
+        slSet('ref', local.ref);
+        slSet('category', local.category);
+        hint.textContent = '⏳ Récupération du produit…';
+        hint.className = 'smart-link-hint partial';
+
+        // b) Lecture de la page produit côté serveur (avec suite en arrière-plan si besoin)
+        let partialShown = false;
+        const d = await fetchProductMeta(url, (p) => {
+            if (seq !== smartLinkSeq) return;
+            if (!partialShown && p.name) { applyProductMeta(p); partialShown = true; }
+            hint.textContent = '⏳ Site protégé, on récupère la photo et le prix… Vous pouvez déjà ajouter, la fiche se complétera toute seule.';
+        });
+        if (seq !== smartLinkSeq) return; // un autre lien a été collé, ou la popup a été rouverte
+
+        if (d.error && !d.name) {
+            track('smart_link_result', { source: 'echec' });
+            hint.textContent = 'Page non lisible, vérifiez le nom et le prix';
+            hint.className = 'smart-link-hint partial';
             return;
         }
-        
-        let filled = [];
-        
-        // Only fill empty fields (don't overwrite user input)
-        if (parsed.supplier && !document.getElementById('item-input-supplier').value) {
-            document.getElementById('item-input-supplier').value = parsed.supplier;
-            filled.push('fournisseur');
-        }
-        if (parsed.name && !document.getElementById('item-input-name').value) {
-            document.getElementById('item-input-name').value = parsed.name;
-            filled.push('nom');
-        }
-        if (parsed.ref && !document.getElementById('item-input-ref').value) {
-            document.getElementById('item-input-ref').value = parsed.ref;
-            filled.push('réf');
-        }
-        if (parsed.category && !document.getElementById('item-input-category').value) {
-            document.getElementById('item-input-category').value = parsed.category;
-            updateSubcategoryOptions();
-            filled.push('catégorie');
-        }
-        
-        if (filled.length > 0) {
-            hint.textContent = `✨ ${filled.join(', ')} pré-rempli${filled.length > 1 ? 's' : ''}`;
-            hint.className = 'smart-link-hint success';
-        } else if (parsed.supplier) {
-            hint.textContent = `✓ ${parsed.supplier} détecté`;
-            hint.className = 'smart-link-hint partial';
-        }
-    }, 300);
+        const filled = applyProductMeta(d);
+        if (filled.length && itemAddMethod === 'manuel') itemAddMethod = 'lien';
+        track('smart_link_result', { source: d.source || 'inconnu', cached: !!d.cached });
+        hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''}` : '';
+        hint.className = 'smart-link-hint success';
+    }, 250);
 }
+
+// Après l'enregistrement : si la récupération tourne encore pour ce lien,
+// on complète la fiche dès qu'elle aboutit (sans écraser ce que l'utilisateur a saisi).
+function enrichItemWhenReady(docRef, saved) {
+    const job = smartLinkJob;
+    if (!job || job.done || !saved.link || job.url !== saved.link) return;
+    const autoName = document.getElementById('item-input-name').dataset.auto === '1';
+    job.promise.then(async (d) => {
+        if (!d || (d.error && !d.name)) return;
+        const patch = {};
+        if (d.name && autoName) patch.name = d.name;
+        if (d.price && !saved.price) patch.price = d.price;
+        if (d.image && !saved.imageUrl) patch.imageUrl = d.image;
+        if (d.site && !saved.supplier) patch.supplier = d.site;
+        if (d.ref && !saved.ref) patch.ref = d.ref;
+        if (!Object.keys(patch).length) return;
+        patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+        try {
+            await docRef.update(patch);
+            toast(`✨ ${saved.name || 'Élément'} complété${patch.price ? ' (prix' + (patch.imageUrl ? ' et photo)' : ')') : patch.imageUrl ? ' (photo)' : ''}`);
+        } catch (e) { console.error('Enrichissement :', e); }
+    });
+}
+
+// ─── BOUTON « AJOUTER À COCON » (lecture dans le navigateur de l'utilisateur) ───
+// Le favori lit la fiche produit sur le site du marchand et ouvre /app?clip=<données>.
+// On garde le produit en attente (même après connexion) jusqu'à ce que l'utilisateur
+// choisisse une pièce et clique « Ajouter à cette pièce ».
+
+let pendingClip = null;
+
+(function readClipFromUrl() {
+    try {
+        const params = new URLSearchParams(location.search);
+        const raw = params.get('clip');
+        if (raw) {
+            const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+            const json = decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4))));
+            const c = JSON.parse(json);
+            if (c && c.u && /^https?:/.test(c.u)) {
+                try { sessionStorage.setItem('coconClip', JSON.stringify(c)); } catch {}
+            }
+            params.delete('clip');
+            const qs = params.toString();
+            history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+        }
+        if (raw) track('clip_received');
+        const stored = sessionStorage.getItem('coconClip');
+        if (stored) pendingClip = JSON.parse(stored);
+    } catch (e) { console.warn('Clip illisible', e); }
+})();
+
+function clipName(c) {
+    let n = String(c.n || '').replace(/\s+/g, ' ').trim();
+    const host = (() => { try { return new URL(c.u).hostname.replace(/^www\./, '').split('.')[0].toLowerCase(); } catch { return ''; } })();
+    const parts = n.split(/\s[|–—-]\s/);
+    if (parts.length > 1) {
+        const last = parts[parts.length - 1].toLowerCase().replace(/[\s.-]/g, '');
+        const site = String(c.s || '').toLowerCase().replace(/[\s.-]/g, '');
+        if ((host && last.includes(host.replace(/-/g, ''))) || (site && last.includes(site))) n = parts.slice(0, -1).join(' - ');
+    }
+    return n.slice(0, 100);
+}
+
+function clipPrice(v) {
+    if (v == null || v === '') return null;
+    let s = String(v).replace(/[^\d.,]/g, '');
+    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(',', '.');
+    const n = parseFloat(s);
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+}
+
+function clipSite(c) {
+    if (c.s) return c.s;
+    try {
+        const h = new URL(c.u).hostname.replace(/^www\./, '').split('.')[0];
+        return h.charAt(0).toUpperCase() + h.slice(1);
+    } catch { return ''; }
+}
+
+function renderClipTray() {
+    const tray = document.getElementById('clip-tray');
+    if (!tray) return;
+    if (!pendingClip) { tray.style.display = 'none'; return; }
+    const price = clipPrice(pendingClip.p);
+    document.getElementById('clip-tray-name').textContent = clipName(pendingClip) || 'Produit';
+    const img = document.getElementById('clip-tray-img');
+    img.src = pendingClip.i || '';
+    const btn = document.getElementById('clip-tray-add');
+    const inRoom = !!(currentProject && currentRoom !== null && !isSharedView);
+    btn.disabled = !inRoom;
+    const meta = [clipSite(pendingClip), price ? formatPrice(price) : ''].filter(Boolean).join(' · ');
+    document.getElementById('clip-tray-meta').textContent = inRoom
+        ? meta
+        : (meta ? meta + ' · ' : '') + 'ouvrez un projet et choisissez une pièce';
+    tray.style.display = '';
+}
+
+function addClipToRoom() {
+    if (!pendingClip || !currentProject || currentRoom === null) return;
+    const c = pendingClip;
+    showAddItemModal();
+    document.getElementById('item-input-link').value = c.u;
+    const d = { name: clipName(c), price: clipPrice(c.p), image: c.i || null, site: clipSite(c), ref: c.r || null };
+    const filled = applyProductMeta(d);
+    itemAddMethod = 'bouton';
+    const hint = document.getElementById('smart-link-hint');
+    hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''} depuis la page` : '';
+    hint.className = 'smart-link-hint success';
+    // Le prix manque (rare) : on tente quand même la récupération serveur pour le compléter
+    if (!d.price) handleSmartLink(c.u);
+    dismissClip();
+}
+
+function dismissClip() {
+    pendingClip = null;
+    try { sessionStorage.removeItem('coconClip'); } catch {}
+    renderClipTray();
+}
+
+// Le bandeau suit la navigation : actif dès qu'une pièce est ouverte
+['selectRoom', 'showDashboard', 'openProject'].forEach(fnName => {
+    const original = window[fnName];
+    if (typeof original !== 'function') return;
+    window[fnName] = function (...args) {
+        const r = original.apply(this, args);
+        Promise.resolve(r).finally(() => setTimeout(renderClipTray, 0));
+        return r;
+    };
+});
+document.addEventListener('DOMContentLoaded', renderClipTray);
 
 // ─── INSPIRATION SPLIT VIEW & POST-ITS ───────────────────────
 
