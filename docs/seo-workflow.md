@@ -28,6 +28,18 @@ Français, vouvoiement, aucun tiret cadratin ni point médian. Cocon cité 1 à 
 - **Priorité 2** : le cluster moodboard (moodboard gratuit, moodboard en ligne, créer un moodboard), page en position 29.
 - **Ensuite** : retravailler les titres des pages déjà en page 1 sans clic (quelle-couleur-pour-un-salon, tricount-renovation-deco).
 
+## Déploiement beta
+La beta (https://beta--ephemeral-syrniki-e31b2e.netlify.app) ne doit jamais être indexée. Le noindex vient d'un fichier `_headers` généré au build pour les seuls contextes deploy-preview et branch-deploy (voir netlify.toml).
+1. La beta se déploie **uniquement** avec :
+   `netlify deploy --build --context deploy-preview --alias beta`
+   Sans `--build`, le `_headers` n'est pas généré et la beta part sans noindex.
+2. Après chaque déploiement, `curl -I https://beta--ephemeral-syrniki-e31b2e.netlify.app/` : l'en-tête `X-Robots-Tag: noindex` doit être présent. S'il manque, le signaler immédiatement à Al.
+3. `curl -I https://cocon-app.fr/` : l'en-tête `X-Robots-Tag` doit être **absent**. S'il est présent, le signaler immédiatement : la production est en noindex.
+4. Supprimer le `_headers` généré en local après le déploiement (`rm -f _headers`), pour qu'il ne parte jamais en production.
+
+## Rapports et documents internes
+Le site est publié depuis la racine du repo : tout fichier poussé sur main est public sur cocon-app.fr. Les rapports SEO vont dans ~/cocon-growth/reviews/, jamais dans le repo du site (reviews/ est dans .gitignore). /docs/, /reviews/ et /CLAUDE.md renvoient un 404 forcé (netlify.toml).
+
 ## Interdits
 - Ne jamais utiliser netlify deploy --prod, merger dans main ou pousser sur main sans un message explicite « OK prod ».
 - Ne jamais toucher aux fichiers de credentials (~/.config/gcloud, client_secret*, token*). Ils sont dans .gitignore, ne jamais les ajouter à un commit.
