@@ -1,5 +1,15 @@
 # Netlify configuration for Cocon
 
+# Noindex for non-production deploys (beta alias, branch deploys, deploy previews).
+# Netlify can't scope [[headers]] by context, so these contexts generate a _headers
+# file at build time. Production has no build command and never gets it.
+# _headers is gitignored: never commit it, or production would serve the noindex.
+[context.deploy-preview]
+  command = "printf '/*\\n  X-Robots-Tag: noindex\\n' > _headers"
+
+[context.branch-deploy]
+  command = "printf '/*\\n  X-Robots-Tag: noindex\\n' > _headers"
+
 # Redirects
 [[redirects]]
   from = "/app"
