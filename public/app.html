@@ -133,7 +133,7 @@
                 </div>
                 <div class="user-dropdown" id="user-dropdown">
                     <a href="/blog" target="_blank">📝 Blog déco</a>
-                    <a href="/ajouter" target="_blank">📌 Bouton « Ajouter à Cocon »</a>
+                    <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
                     <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">
@@ -200,7 +200,7 @@
                 <div class="user-dropdown" id="user-dropdown-2">
                     <a href="#" onclick="showDashboard()">Mes projets</a>
                     <a href="/blog" target="_blank">📝 Blog déco</a>
-                    <a href="/ajouter" target="_blank">📌 Bouton « Ajouter à Cocon »</a>
+                    <a href="/ajouter" target="_blank" onclick="track('install_open', { from: 'menu' })">📌 Bouton « Ajouter à Cocon »</a>
                     <a href="#" onclick="exportAllData()">📦 Exporter mes données</a>
                     <a href="#" onclick="showDeleteAccountModal()">🗑️ Supprimer mon compte</a>
                     <hr style="margin:0.3rem 0;border:none;border-top:1px solid var(--cream)">

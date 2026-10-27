@@ -11,6 +11,13 @@ let unsubProject = null;
 let unsubItems = null;
 let unsubComments = null;
 
+// ─── MESURE (GA4) ────────────────────────────────────────────
+// Événements d'usage : n'échoue jamais, même si GA est bloqué par l'utilisateur.
+function track(name, params = {}) {
+    try { if (typeof gtag === 'function') gtag('event', name, params); } catch {}
+}
+let itemAddMethod = 'manuel'; // 'manuel' | 'lien' | 'bouton' : comment le produit en cours a été rempli
+
 // ─── SCREEN MANAGEMENT ───────────────────────────────────────
 
 function showScreen(id) {
@@ -453,6 +460,7 @@ function showAddItemModal(editItem = null) {
     modal.classList.add('active');
     resetItemImagePreview();
     resetSmartLinkState();
+    itemAddMethod = 'manuel';
     populatePaidByOptions();
 
     if (editItem) {
@@ -539,6 +547,7 @@ async function saveItem(e) {
         data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         savedRef = await itemsRef.add(data);
         toast('Élément ajouté !');
+        track('item_added', { method: itemAddMethod });
     }
     enrichItemWhenReady(savedRef, data);
 
@@ -2023,11 +2032,14 @@ function handleSmartLink(url) {
         if (seq !== smartLinkSeq) return; // un autre lien a été collé, ou la popup a été rouverte
 
         if (d.error && !d.name) {
+            track('smart_link_result', { source: 'echec' });
             hint.textContent = 'Page non lisible, vérifiez le nom et le prix';
             hint.className = 'smart-link-hint partial';
             return;
         }
         const filled = applyProductMeta(d);
+        if (filled.length && itemAddMethod === 'manuel') itemAddMethod = 'lien';
+        track('smart_link_result', { source: d.source || 'inconnu', cached: !!d.cached });
         hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''}` : '';
         hint.className = 'smart-link-hint success';
     }, 250);
@@ -2078,6 +2090,7 @@ let pendingClip = null;
             const qs = params.toString();
             history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
         }
+        if (raw) track('clip_received');
         const stored = sessionStorage.getItem('coconClip');
         if (stored) pendingClip = JSON.parse(stored);
     } catch (e) { console.warn('Clip illisible', e); }
@@ -2137,6 +2150,7 @@ function addClipToRoom() {
     document.getElementById('item-input-link').value = c.u;
     const d = { name: clipName(c), price: clipPrice(c.p), image: c.i || null, site: clipSite(c), ref: c.r || null };
     const filled = applyProductMeta(d);
+    itemAddMethod = 'bouton';
     const hint = document.getElementById('smart-link-hint');
     hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''} depuis la page` : '';
     hint.className = 'smart-link-hint success';
