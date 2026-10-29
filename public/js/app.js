@@ -2237,22 +2237,192 @@ function clipSite(c) {
     } catch { return ''; }
 }
 
+// ─── Destination « Ranger dans » ───
+let clipProjectsLoading = false;
+let clipDoneTimer = null;
+
+function clipDestinations() {
+    const list = [];
+    (projects || []).forEach(p => (p.rooms || []).forEach((r, i) => list.push({
+        value: `${p.id}|${i}`, pid: p.id, index: i,
+        label: `${r.icon ? r.icon + ' ' : ''}${r.name}`, project: p.name,
+    })));
+    return list;
+}
+
+function defaultClipRoom(dests) {
+    if (currentProject && currentRoom !== null && !isSharedView) {
+        const v = `${currentProject.id}|${currentRoom}`;
+        if (dests.some(d => d.value === v)) return v;
+    }
+    let last = null;
+    try { last = localStorage.getItem('coconLastRoom'); } catch {}
+    if (last && dests.some(d => d.value === last)) return last;
+    return dests[0] ? dests[0].value : '';
+}
+
+function rememberClipRoom(v) { try { localStorage.setItem('coconLastRoom', v); } catch {} }
+
+async function ensureClipProjects() {
+    if ((projects && projects.length) || clipProjectsLoading || !currentUser || currentUser.isAnonymous) return;
+    clipProjectsLoading = true;
+    try {
+        const snap = await db.collection('projects').where('ownerId', '==', currentUser.uid).orderBy('createdAt', 'desc').get();
+        projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) { console.warn('Projets illisibles', e); }
+    clipProjectsLoading = false;
+    renderClipTray();
+}
+
 function renderClipTray() {
     const tray = document.getElementById('clip-tray');
-    if (!tray) return;
-    if (!pendingClip) { tray.style.display = 'none'; return; }
+    if (!tray || tray.classList.contains('is-done')) return;
+    if (!pendingClip || !currentUser) { // sans utilisateur : réapparaît après la connexion
+        tray.style.display = 'none';
+        document.body.classList.remove('has-clip-tray');
+        return;
+    }
+    ensureClipProjects();
+
     const price = clipPrice(pendingClip.p);
     document.getElementById('clip-tray-name').textContent = clipName(pendingClip) || 'Produit';
-    const img = document.getElementById('clip-tray-img');
-    img.src = pendingClip.i || '';
-    const btn = document.getElementById('clip-tray-add');
-    const inRoom = !!(currentProject && currentRoom !== null && !isSharedView);
-    btn.disabled = !inRoom;
-    const meta = [clipSite(pendingClip), price ? formatPrice(price) : ''].filter(Boolean).join(' · ');
-    document.getElementById('clip-tray-meta').textContent = inRoom
-        ? meta
-        : (meta ? meta + ' · ' : '') + 'ouvrez un projet et choisissez une pièce';
+    document.getElementById('clip-tray-img').src = pendingClip.i || '';
+    document.getElementById('clip-tray-meta').textContent = [clipSite(pendingClip), price ? formatPrice(price) : ''].filter(Boolean).join(' · ');
+
+    const dests = clipDestinations();
+    const sel = document.getElementById('clip-tray-room');
+    const add = document.getElementById('clip-tray-add');
+    const edit = document.getElementById('clip-tray-edit');
+    if (dests.length) {
+        const chosen = sel.value && dests.some(d => d.value === sel.value) ? sel.value : defaultClipRoom(dests);
+        const byProject = {};
+        dests.forEach(d => (byProject[d.project] = byProject[d.project] || []).push(d));
+        const multi = Object.keys(byProject).length > 1;
+        sel.innerHTML = Object.entries(byProject).map(([proj, rooms]) => {
+            const opts = rooms.map(d => `<option value="${escHtml(d.value)}"${d.value === chosen ? ' selected' : ''}>${escHtml(d.label)}${multi ? '' : ' · ' + escHtml(proj)}</option>`).join('');
+            return multi ? `<optgroup label="${escHtml(proj)}">${opts}</optgroup>` : opts;
+        }).join('');
+        document.getElementById('clip-tray-dest').style.display = '';
+        add.textContent = 'Ajouter';
+        add.onclick = quickAddClip;
+        edit.style.display = '';
+    } else {
+        document.getElementById('clip-tray-dest').style.display = 'none';
+        document.getElementById('clip-tray-meta').textContent += (clipProjectsLoading ? '' : ' · créez un projet pour le ranger');
+        add.textContent = 'Créer un projet';
+        add.onclick = () => { showDashboard(); setTimeout(() => typeof showNewProjectModal === 'function' && showNewProjectModal(), 50); };
+        edit.style.display = 'none';
+    }
+    document.body.classList.add('has-clip-tray');
+    if (tray.style.display === 'none') {
+        tray.classList.remove('is-arriving'); void tray.offsetWidth; tray.classList.add('is-arriving');
+        track('clip_tray_shown');
+    }
     tray.style.display = '';
+}
+
+// Le vrai « un clic » : enregistre le produit directement dans la pièce choisie
+async function quickAddClip() {
+    if (!pendingClip) return;
+    const sel = document.getElementById('clip-tray-room');
+    const dest = clipDestinations().find(d => d.value === sel.value);
+    if (!dest) return;
+    const proj = (projects || []).find(p => p.id === dest.pid);
+    const room = proj && proj.rooms && proj.rooms[dest.index];
+    if (!room) return;
+    const c = pendingClip;
+    const btn = document.getElementById('clip-tray-add');
+    btn.disabled = true; btn.textContent = 'Ajout…';
+    if (!userProfile) await loadUserProfile();
+
+    const price = clipPrice(c.p) || 0;
+    const data = {
+        name: clipName(c) || 'Produit', imageUrl: c.i || '', category: '', subcategory: '',
+        supplier: clipSite(c), ref: c.r || '', link: c.u, price, qty: 1, dimensions: '',
+        status: 'planned', paidBy: '', notes: '', roomIndex: dest.index, roomName: room.name,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    try {
+        const ref = await db.collection('projects').doc(dest.pid).collection('items').add(data);
+        // Budget à jour même si le projet n'est pas ouvert
+        if (price && !(currentProject && currentProject.id === dest.pid)) {
+            db.collection('projects').doc(dest.pid).update({ totalBudget: firebase.firestore.FieldValue.increment(price) }).catch(() => {});
+        }
+        rememberClipRoom(dest.value);
+        const first = !(userProfile && userProfile.firstClipAt);
+        updateUserProfile({ buttonInstalled: true, ...(first ? { firstClipAt: new Date().toISOString() } : {}) });
+        track('item_added', { method: 'bouton', quick: true });
+        if (!price) completeClipLater(ref, c.u);
+        pendingClip = null;
+        try { sessionStorage.removeItem('coconClip'); } catch {}
+        showClipDone(ref, dest, room, proj, first);
+    } catch (e) {
+        console.error('Ajout rapide :', e);
+        btn.disabled = false; btn.textContent = 'Ajouter';
+        toast('Ajout impossible, réessayez');
+    }
+}
+
+// Prix absent de la page : la récupération serveur complète la fiche en arrière-plan
+function completeClipLater(ref, url) {
+    fetchProductMeta(url).then(d => {
+        if (!d || !d.price) return;
+        const patch = { price: d.price, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        ref.update(patch).then(() => toast(`✨ Prix ajouté : ${formatPrice(d.price)}`)).catch(() => {});
+    });
+}
+
+function showClipDone(ref, dest, room, proj, first) {
+    const tray = document.getElementById('clip-tray');
+    tray.classList.add('is-done');
+    document.getElementById('clip-tray-name').textContent = first ? 'Votre premier produit en un clic !' : `Ajouté à ${room.name}`;
+    document.getElementById('clip-tray-meta').textContent = first ? `Rangé dans ${room.name} · ${proj.name}` : proj.name;
+    document.getElementById('clip-tray-dest').style.display = 'none';
+    const add = document.getElementById('clip-tray-add');
+    add.disabled = false; add.textContent = 'Voir';
+    add.onclick = () => { hideClipDone(); goToRoom(dest.pid, dest.index); };
+    const edit = document.getElementById('clip-tray-edit');
+    edit.style.display = ''; edit.textContent = 'Annuler';
+    edit.onclick = async () => {
+        hideClipDone();
+        try { await ref.delete(); toast('Ajout annulé'); track('clip_undo'); } catch { toast('Annulation impossible'); }
+    };
+    clearTimeout(clipDoneTimer);
+    clipDoneTimer = setTimeout(hideClipDone, first ? 9000 : 6000);
+}
+
+function hideClipDone() {
+    clearTimeout(clipDoneTimer);
+    const tray = document.getElementById('clip-tray');
+    tray.classList.remove('is-done');
+    document.body.classList.remove('has-clip-tray');
+    document.getElementById('clip-tray-edit').textContent = 'Modifier avant';
+    document.getElementById('clip-tray-edit').onclick = editClipBeforeAdd;
+    tray.style.display = 'none';
+    renderClipTray();
+}
+
+// Ouvre le projet, sélectionne la pièce (attend que le projet soit chargé)
+function goToRoom(pid, index, then) {
+    const ready = () => currentProject && currentProject.id === pid && currentProject.rooms && currentProject.rooms.length > index;
+    const finish = () => { selectRoom(index); if (then) then(); };
+    if (ready()) return finish();
+    openProject(pid);
+    const t0 = Date.now();
+    const wait = setInterval(() => {
+        if (ready()) { clearInterval(wait); finish(); }
+        else if (Date.now() - t0 > 6000) clearInterval(wait);
+    }, 100);
+}
+
+// Ancien parcours, pour vérifier ou compléter avant d'enregistrer
+function editClipBeforeAdd() {
+    const sel = document.getElementById('clip-tray-room');
+    const dest = clipDestinations().find(d => d.value === sel.value);
+    if (!dest) return;
+    rememberClipRoom(dest.value);
+    goToRoom(dest.pid, dest.index, () => addClipToRoom());
 }
 
 function addClipToRoom() {

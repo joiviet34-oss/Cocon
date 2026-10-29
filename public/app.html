@@ -831,14 +831,21 @@
     </div>
 
     <!-- Produit reçu du bouton « Ajouter à Cocon » -->
-    <div class="clip-tray" id="clip-tray" style="display:none" role="status">
+    <div class="clip-tray" id="clip-tray" style="display:none" role="status" aria-live="polite">
         <img class="clip-tray-img" id="clip-tray-img" alt="">
         <div class="clip-tray-info">
             <div class="clip-tray-name" id="clip-tray-name"></div>
             <div class="clip-tray-meta" id="clip-tray-meta"></div>
+            <label class="clip-tray-dest" id="clip-tray-dest">
+                <span>Ranger dans</span>
+                <select id="clip-tray-room" onchange="rememberClipRoom(this.value)"></select>
+            </label>
         </div>
-        <button class="btn-primary-app clip-tray-add" id="clip-tray-add" onclick="addClipToRoom()">Ajouter à cette pièce</button>
-        <button class="clip-tray-close" aria-label="Ignorer ce produit" onclick="dismissClip()">&times;</button>
+        <div class="clip-tray-actions" id="clip-tray-actions">
+            <button class="btn-primary-app clip-tray-add" id="clip-tray-add" onclick="quickAddClip()">Ajouter</button>
+            <button class="clip-tray-link" id="clip-tray-edit" onclick="editClipBeforeAdd()">Modifier avant</button>
+        </div>
+        <button class="clip-tray-close" id="clip-tray-close" aria-label="Ignorer ce produit" onclick="dismissClip()">&times;</button>
     </div>
 
     <!-- Delete Account Modal -->

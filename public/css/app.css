@@ -715,3 +715,25 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--cha
   .news-card-actions { width: 100%; }
   .news-card-actions .btn-primary-app { flex: 1; justify-content: center; }
 }
+
+/* ─── Bandeau « un clic » ─── */
+.clip-tray-dest { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.78rem; color: var(--deep-brown); }
+.clip-tray-dest span { opacity: 0.7; white-space: nowrap; }
+.clip-tray-dest select { min-width: 0; max-width: 100%; flex: 1; font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--charcoal); background: var(--cream); border: 1px solid var(--sand); border-radius: var(--radius-sm); padding: 0.3rem 0.5rem; cursor: pointer; }
+.clip-tray-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; flex-shrink: 0; }
+.clip-tray-link { background: none; border: none; font-size: 0.76rem; color: var(--deep-brown); opacity: 0.7; cursor: pointer; padding: 0.2rem; text-decoration: underline; text-underline-offset: 2px; }
+.clip-tray-link:hover { opacity: 1; }
+.clip-tray.is-done { border-color: var(--sage); }
+.clip-tray.is-done .clip-tray-name::before { content: '✓ '; color: var(--sage); }
+.clip-tray.is-arriving { animation: clip-in 0.45s var(--ease); }
+@keyframes clip-in { from { transform: translate(-50%, 24px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+.clip-tray.is-done .clip-tray-img { animation: clip-pop 0.5s var(--ease); }
+@keyframes clip-pop { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .clip-tray.is-arriving, .clip-tray.is-done .clip-tray-img { animation: none; } }
+@media (max-width: 560px) {
+  .clip-tray-actions { width: 100%; order: 3; flex-direction: row; }
+  .clip-tray-actions .clip-tray-add { flex: 1; }
+}
+
+/* Le bandeau prend la place du bouton d'avis tant qu'il est affiché */
+body.has-clip-tray .feedback-fab { visibility: hidden; }
