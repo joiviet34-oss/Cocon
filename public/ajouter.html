@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex">
 <title>Bouton Ajouter à Cocon</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Lampe Bloom, laiton et lin","sku":"COCON-ESSAI","image":"/img/essai-lampe.svg","brand":{"@type":"Brand","name":"Fiche d'essai Cocon"},"offers":{"@type":"Offer","price":"89.00","priceCurrency":"EUR"}}</script>
+<meta property="og:site_name" content="Fiche d'essai Cocon">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9W7D6EM7DD"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-9W7D6EM7DD');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,10 +42,22 @@
   .step p { margin-top: 4px; color: #44474f; font-size: 0.95rem; }
   kbd { font-family: inherit; font-size: 0.82rem; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; }
 
+  .practice { margin-top: 28px; display: grid; grid-template-columns: 140px 1fr; gap: 20px; align-items: center; background: #fff; border: 1px dashed var(--ochre); border-radius: 16px; padding: 18px; transition: border-color 0.3s, box-shadow 0.3s; }
+  .practice img { width: 140px; height: 140px; border-radius: 12px; display: block; }
+  .practice-tag { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--stone); }
+  .practice-name { font-family: Fraunces, Georgia, serif; font-size: 1.35rem; margin-top: 4px; }
+  .practice-price { font-weight: 600; margin-top: 4px; }
+  .practice-cta { margin-top: 10px; font-size: 0.92rem; color: #44474f; }
+  .practice-cta strong { color: var(--terracotta); font-weight: 600; }
+  .practice.is-ready { border: 1px solid var(--terracotta); box-shadow: 0 0 0 4px rgba(184, 85, 58, 0.12); }
+  .drag-done { display: none; margin-top: 14px; font-size: 0.92rem; color: var(--ink); }
+  .drag-done.show { display: block; }
   .note { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 0.88rem; color: var(--stone); }
   .note p + p { margin-top: 8px; }
 
   @media (max-width: 560px) {
+    .practice { grid-template-columns: 96px 1fr; }
+    .practice img { width: 96px; height: 96px; }
     .wrap { padding: 32px 16px 56px; }
     .step { grid-template-columns: 40px 1fr; }
   }
@@ -61,6 +75,7 @@
     <a class="bookmarklet" id="bookmarklet" href="#">＋ Ajouter à Cocon</a>
     <p class="drag-hint"><strong>Glissez ce bouton</strong> dans votre barre de favoris.</p>
     <p class="click-warn" id="click-warn"></p>
+    <p class="drag-done" id="drag-done">Bien joué. Il ne reste qu'à l'essayer sur la fiche ci-dessous.</p>
   </div>
 
   <div class="steps">
@@ -84,6 +99,23 @@
         <h3>Cliquez-le sur une fiche produit</h3>
         <p>Cocon s'ouvre dans un nouvel onglet, la pièce est déjà choisie. Un clic sur Ajouter, c'est rangé.</p>
       </div>
+    </div>
+    <div class="step">
+      <div class="num">iv.</div>
+      <div>
+        <h3>Essayez-le tout de suite, ici</h3>
+        <p>Cette page est aussi une fiche d'essai. Cliquez votre nouveau favori maintenant : si Cocon vous dit « Ça marche », tout est prêt.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="practice" id="practice">
+    <img src="/img/essai-lampe.svg" alt="Lampe Bloom">
+    <div>
+      <div class="practice-tag">Fiche d'essai</div>
+      <div class="practice-name">Lampe Bloom, laiton et lin</div>
+      <div class="practice-price">89,00 €</div>
+      <div class="practice-cta">Cliquez <strong>＋ Ajouter à Cocon</strong> dans votre barre de favoris.</div>
     </div>
   </div>
 
@@ -148,6 +180,12 @@ function clip() {
   a.setAttribute('href', 'javascript:' + encodeURIComponent(code));
   try { gtag('event', 'install_open', { from: 'page' }); } catch (e) {}
   a.addEventListener('dragstart', function () { try { gtag('event', 'install_drag'); } catch (e) {} });
+  a.addEventListener('dragend', function () {
+    document.getElementById('drag-done').classList.add('show');
+    var pr = document.getElementById('practice');
+    pr.classList.add('is-ready');
+    pr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
   a.addEventListener('click', function (e) {
     e.preventDefault();
     document.getElementById('click-warn').textContent = 'Ne cliquez pas ici : glissez le bouton dans votre barre de favoris, puis utilisez-le sur une fiche produit.';

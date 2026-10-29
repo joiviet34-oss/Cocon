@@ -462,6 +462,7 @@ function showAddItemModal(editItem = null) {
     resetItemImagePreview();
     resetSmartLinkState();
     itemAddMethod = 'manuel';
+    updateInstallNudge(!!editItem);
     populatePaidByOptions();
 
     if (editItem) {
@@ -2048,6 +2049,38 @@ function handleSmartLink(url) {
 
 // Après l'enregistrement : si la récupération tourne encore pour ce lien,
 // on complète la fiche dès qu'elle aboutit (sans écraser ce que l'utilisateur a saisi).
+// ─── Astuce « bouton » dans la popup d'ajout (ordinateur, tant que le bouton n'a jamais servi) ───
+function updateInstallNudge(isEdit) {
+    const el = document.getElementById('install-nudge');
+    if (!el) return;
+    const show = !isEdit && !isTouchDevice() && userProfile
+        && !userProfile.buttonInstalled && !userProfile.nudgeDismissed;
+    el.style.display = show ? '' : 'none';
+    if (show) track('install_nudge_view');
+}
+function installNudgeClick() { track('install_open', { from: 'nudge' }); }
+function dismissInstallNudge() {
+    updateUserProfile({ nudgeDismissed: true });
+    document.getElementById('install-nudge').style.display = 'none';
+    track('install_nudge_dismiss');
+}
+
+// ─── « Coller le lien » (mobile) ───
+async function pasteProductLink() {
+    const input = document.getElementById('item-input-link');
+    try {
+        const text = ((await navigator.clipboard.readText()) || '').trim();
+        const url = (text.match(/https?:\/\/\S+/) || [])[0];
+        if (!url) { toast('Aucun lien copié pour le moment'); input.focus(); return; }
+        input.value = url;
+        track('paste_button');
+        handleSmartLink(url);
+    } catch {
+        input.focus();
+        toast('Appuyez longuement dans le champ, puis « Coller »');
+    }
+}
+
 function enrichItemWhenReady(docRef, saved) {
     const job = smartLinkJob;
     if (!job || job.done || !saved.link || job.url !== saved.link) return;
@@ -2073,6 +2106,13 @@ function enrichItemWhenReady(docRef, saved) {
 // Les annonces vivent ici, la plus récente en premier. Ce que l'utilisateur a déjà vu
 // est enregistré dans son profil Firestore (users/{uid}.seenNews) : suivi d'un appareil à l'autre.
 const ANNOUNCEMENTS = [
+    {
+        id: 'un-clic-2026-10',
+        date: '2026-10-29',
+        title: 'Votre bouton range maintenant en un seul clic',
+        text: 'Après un clic sur Ajouter à Cocon, choisissez la pièce dans le bandeau et cliquez Ajouter : c\'est enregistré, sans ouvrir le projet. Cocon retient la dernière pièce utilisée.',
+        onlyIf: 'buttonInstalled',
+    },
     {
         id: 'bouton-ajouter-2026-10',
         date: '2026-10-27',
@@ -2106,7 +2146,9 @@ function updateUserProfile(patch) {
 function unseenNews() {
     if (!userProfile) return [];
     const seen = userProfile.seenNews || [];
-    return ANNOUNCEMENTS.filter(a => !seen.includes(a.id) && !(a.skipIf && userProfile[a.skipIf]));
+    return ANNOUNCEMENTS.filter(a => !seen.includes(a.id)
+        && !(a.skipIf && userProfile[a.skipIf])
+        && !(a.onlyIf && !userProfile[a.onlyIf]));
 }
 
 function markNewsSeen(id) {
@@ -2195,7 +2237,9 @@ let pendingClip = null;
             const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
             const json = decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4))));
             const c = JSON.parse(json);
-            if (c && c.u && /^https?:/.test(c.u)) {
+            if (c && c.r === 'COCON-ESSAI') {
+                try { sessionStorage.setItem('coconPractice', '1'); } catch {}
+            } else if (c && c.u && /^https?:/.test(c.u)) {
                 try { sessionStorage.setItem('coconClip', JSON.stringify(c)); } catch {}
             }
             params.delete('clip');
@@ -2274,9 +2318,47 @@ async function ensureClipProjects() {
     renderClipTray();
 }
 
+function markInstalled(extra = {}) {
+    // Le bouton marche : on retire les annonces qui le présentent, sans attendre un rechargement
+    const seen = new Set((userProfile && userProfile.seenNews) || []);
+    ANNOUNCEMENTS.filter(a => a.skipIf === 'buttonInstalled' || a.onlyIf === 'buttonInstalled').forEach(a => seen.add(a.id));
+    updateUserProfile({ buttonInstalled: true, seenNews: [...seen], ...extra });
+    renderNews();
+}
+
+function practicePending() { try { return sessionStorage.getItem('coconPractice') === '1'; } catch { return false; } }
+
+async function showPracticeSuccess() {
+    const tray = document.getElementById('clip-tray');
+    try { sessionStorage.removeItem('coconPractice'); } catch {}
+    if (!userProfile) await loadUserProfile();
+    markInstalled();
+    track('install_success');
+    tray.classList.add('is-done', 'is-practice');
+    document.body.classList.add('has-clip-tray');
+    document.getElementById('clip-tray-img').src = '/img/essai-lampe.svg';
+    document.getElementById('clip-tray-name').textContent = 'Ça marche ! Votre bouton est prêt';
+    document.getElementById('clip-tray-meta').textContent = 'Utilisez-le sur la fiche de n\'importe quel produit';
+    document.getElementById('clip-tray-dest').style.display = 'none';
+    const add = document.getElementById('clip-tray-add');
+    add.disabled = false; add.textContent = 'Essayer sur IKEA';
+    add.onclick = () => { track('practice_next', { site: 'ikea' }); window.open('https://www.ikea.com/fr/fr/', '_blank'); };
+    const edit = document.getElementById('clip-tray-edit');
+    edit.style.display = ''; edit.textContent = 'Maisons du Monde';
+    edit.onclick = () => { track('practice_next', { site: 'mdm' }); window.open('https://www.maisonsdumonde.com/FR/fr', '_blank'); };
+    document.getElementById('clip-tray-close').onclick = () => {
+        tray.classList.remove('is-practice');
+        document.getElementById('clip-tray-close').onclick = dismissClip;
+        hideClipDone();
+    };
+    tray.style.display = '';
+    tray.classList.remove('is-arriving'); void tray.offsetWidth; tray.classList.add('is-arriving');
+}
+
 function renderClipTray() {
     const tray = document.getElementById('clip-tray');
     if (!tray || tray.classList.contains('is-done')) return;
+    if (practicePending() && currentUser) { showPracticeSuccess(); return; }
     if (!pendingClip || !currentUser) { // sans utilisateur : réapparaît après la connexion
         tray.style.display = 'none';
         document.body.classList.remove('has-clip-tray');
@@ -2351,7 +2433,7 @@ async function quickAddClip() {
         }
         rememberClipRoom(dest.value);
         const first = !(userProfile && userProfile.firstClipAt);
-        updateUserProfile({ buttonInstalled: true, ...(first ? { firstClipAt: new Date().toISOString() } : {}) });
+        if (first || !userProfile.buttonInstalled) markInstalled(first ? { firstClipAt: new Date().toISOString() } : {});
         track('item_added', { method: 'bouton', quick: true });
         if (!price) completeClipLater(ref, c.u);
         pendingClip = null;

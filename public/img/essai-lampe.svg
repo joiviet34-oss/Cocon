@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Lampe Bloom, laiton et lin">
+  <rect width="400" height="400" fill="#F4EFE6"/>
+  <ellipse cx="200" cy="352" rx="92" ry="12" fill="#1C1F2A" opacity="0.08"/>
+  <path d="M128 132 Q200 70 272 132 L292 212 L108 212 Z" fill="#B8553A"/>
+  <path d="M108 212 L292 212" stroke="#8E3F2A" stroke-width="4"/>
+  <rect x="194" y="212" width="12" height="118" rx="5" fill="#D4A574"/>
+  <ellipse cx="200" cy="216" rx="16" ry="6" fill="#FBE7C2"/>
+  <rect x="148" y="328" width="104" height="18" rx="9" fill="#D4A574"/>
+  <rect x="160" y="324" width="80" height="8" rx="4" fill="#C08E5C"/>
+</svg>

@@ -737,3 +737,16 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--cha
 
 /* Le bandeau prend la place du bouton d'avis tant qu'il est affiché */
 body.has-clip-tray .feedback-fab { visibility: hidden; }
+
+/* ─── Découverte : coller le lien (mobile), astuce bouton (ordinateur) ─── */
+.link-label { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.paste-link-btn { display: none; margin-left: auto; font: inherit; font-size: 0.78rem; font-weight: 600; color: var(--terracotta); background: rgba(196, 112, 75, 0.1); border: 1px solid rgba(196, 112, 75, 0.35); border-radius: var(--radius-full); padding: 0.3rem 0.8rem; cursor: pointer; }
+@media (pointer: coarse) { .paste-link-btn { display: inline-block; } }
+.install-nudge { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; padding: 0.55rem 0.7rem; font-size: 0.78rem; color: var(--deep-brown); background: var(--cream); border-radius: var(--radius-sm); }
+.install-nudge span { flex: 1; min-width: 12rem; }
+.install-nudge a { color: var(--terracotta); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.install-nudge a:hover { text-decoration: underline; }
+.install-nudge-close { background: none; border: none; font-size: 1.05rem; line-height: 1; color: var(--deep-brown); opacity: 0.5; cursor: pointer; padding: 0 0.2rem; }
+.install-nudge-close:hover { opacity: 1; }
+.clip-tray.is-practice { border-color: var(--terracotta); }
+.clip-tray.is-practice .clip-tray-name::before { content: '✓ '; color: var(--terracotta); }
