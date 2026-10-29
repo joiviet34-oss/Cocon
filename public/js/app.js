@@ -2296,7 +2296,11 @@ const MINI = (() => {
         return sessionStorage.getItem('coconMini') === '1';
     } catch { return false; }
 })();
-if (MINI) document.documentElement.classList.add('is-mini');
+if (MINI) {
+    document.documentElement.classList.add('is-mini');
+    // Certains navigateurs ouvrent la fenêtre en grand : on la ramène à sa taille (sans effet sur un onglet)
+    try { if (window.outerWidth > 640) { window.resizeTo(400, 600); window.moveTo(screen.availWidth - 430, 80); } } catch {}
+}
 
 function closeMini(delay = 0) { setTimeout(() => window.close(), delay); }
 

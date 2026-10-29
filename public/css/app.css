@@ -696,6 +696,10 @@ html.is-mini #dashboard-screen, html.is-mini #project-screen, html.is-mini .moda
 html.is-mini .comments-panel, html.is-mini .lightbox, html.is-mini .feedback-fab,
 html.is-mini .feedback-panel { display: none !important; }
 html.is-mini body { background: var(--cream); overflow: hidden; }
+html.is-mini #auth-screen { position: fixed; inset: 0; z-index: 260; overflow-y: auto; background: var(--cream); }
+html.is-mini .auth-container { grid-template-columns: 1fr; min-height: 100%; }
+html.is-mini .auth-left { display: none; }
+html.is-mini .auth-right { padding: 1.5rem 1.25rem; }
 html.is-mini .mini-wait { display: flex; position: fixed; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; color: var(--deep-brown); font-size: 0.85rem; }
 .mini-brand { font-family: var(--font-display); font-size: 1.3rem; color: var(--terracotta); }
 html.is-mini .clip-tray { inset: 0; left: 0; bottom: 0; transform: none; width: auto; border: none; border-radius: 0; box-shadow: none; flex-direction: column; align-items: stretch; justify-content: center; gap: 1rem; padding: 1.25rem 1.5rem 1.5rem; background: var(--cream); z-index: 300; }
