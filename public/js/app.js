@@ -2288,6 +2288,30 @@ function showNewsModal() {
 
 let pendingClip = null;
 
+// Mini-fenêtre : le bouton ouvre Cocon dans une petite fenêtre posée sur le site du marchand.
+// On choisit la pièce, on ajoute, la fenêtre se ferme : on ne quitte jamais la fiche produit.
+const MINI = (() => {
+    try {
+        if (new URLSearchParams(location.search).get('mini') === '1') sessionStorage.setItem('coconMini', '1');
+        return sessionStorage.getItem('coconMini') === '1';
+    } catch { return false; }
+})();
+if (MINI) document.documentElement.classList.add('is-mini');
+
+function closeMini(delay = 0) { setTimeout(() => window.close(), delay); }
+
+// Bascule vers Cocon en grand (nouvel onglet), en emportant le produit si besoin
+function openFullApp(clip) {
+    let url = '/app';
+    if (clip) {
+        const enc = btoa(unescape(encodeURIComponent(JSON.stringify(clip)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        url += '?clip=' + enc;
+    }
+    window.open(url, '_blank');
+    track('mini_open_full', { withClip: !!clip });
+    closeMini(150);
+}
+
 (function readClipFromUrl() {
     try {
         const params = new URLSearchParams(location.search);
@@ -2406,6 +2430,7 @@ async function showPracticeSuccess() {
     edit.style.display = ''; edit.textContent = 'Maisons du Monde';
     edit.onclick = () => { track('practice_next', { site: 'mdm' }); window.open('https://www.maisonsdumonde.com/FR/fr', '_blank'); };
     document.getElementById('clip-tray-close').onclick = () => {
+        if (MINI) return closeMini();
         tray.classList.remove('is-practice');
         document.getElementById('clip-tray-close').onclick = dismissClip;
         hideClipDone();
@@ -2451,7 +2476,7 @@ function renderClipTray() {
         document.getElementById('clip-tray-dest').style.display = 'none';
         document.getElementById('clip-tray-meta').textContent += (clipProjectsLoading ? '' : ' · créez un projet pour le ranger');
         add.textContent = 'Créer un projet';
-        add.onclick = () => { showDashboard(); setTimeout(() => typeof showNewProjectModal === 'function' && showNewProjectModal(), 50); };
+        add.onclick = MINI ? () => openFullApp(pendingClip) : () => { showDashboard(); setTimeout(() => typeof showNewProjectModal === 'function' && showNewProjectModal(), 50); };
         edit.style.display = 'none';
     }
     document.body.classList.add('has-clip-tray');
@@ -2522,19 +2547,21 @@ function showClipDone(ref, dest, room, proj, first) {
     document.getElementById('clip-tray-dest').style.display = 'none';
     const add = document.getElementById('clip-tray-add');
     add.disabled = false; add.textContent = 'Voir';
-    add.onclick = () => { hideClipDone(); goToRoom(dest.pid, dest.index); };
+    add.onclick = MINI ? () => openFullApp(null) : () => { hideClipDone(); goToRoom(dest.pid, dest.index); };
     const edit = document.getElementById('clip-tray-edit');
     edit.style.display = ''; edit.textContent = 'Annuler';
     edit.onclick = async () => {
-        hideClipDone();
+        clearTimeout(clipDoneTimer);
         try { await ref.delete(); toast('Ajout annulé'); track('clip_undo'); } catch { toast('Annulation impossible'); }
+        if (MINI) closeMini(900); else hideClipDone();
     };
     clearTimeout(clipDoneTimer);
-    clipDoneTimer = setTimeout(hideClipDone, first ? 9000 : 6000);
+    clipDoneTimer = setTimeout(hideClipDone, MINI ? (first ? 4000 : 2500) : (first ? 9000 : 6000));
 }
 
 function hideClipDone() {
     clearTimeout(clipDoneTimer);
+    if (MINI) return closeMini();
     const tray = document.getElementById('clip-tray');
     tray.classList.remove('is-done');
     document.body.classList.remove('has-clip-tray');
@@ -2559,6 +2586,7 @@ function goToRoom(pid, index, then) {
 
 // Ancien parcours, pour vérifier ou compléter avant d'enregistrer
 function editClipBeforeAdd() {
+    if (MINI) { const c = pendingClip; try { sessionStorage.removeItem('coconClip'); } catch {} return openFullApp(c); }
     const sel = document.getElementById('clip-tray-room');
     const dest = clipDestinations().find(d => d.value === sel.value);
     if (!dest) return;
@@ -2586,6 +2614,7 @@ function addClipToRoom() {
 function dismissClip() {
     pendingClip = null;
     try { sessionStorage.removeItem('coconClip'); } catch {}
+    if (MINI) return closeMini();
     renderClipTray();
 }
 

@@ -104,7 +104,7 @@
       <div class="num">iii.</div>
       <div>
         <h3>Cliquez-le sur une fiche produit</h3>
-        <p>Cocon s'ouvre dans un nouvel onglet, la pièce est déjà choisie. Un clic sur Ajouter, c'est rangé.</p>
+        <p>Une petite fenêtre Cocon s'ouvre par-dessus le site, la pièce est déjà choisie. Un clic sur Ajouter, c'est rangé, et vous restez sur la fiche produit.</p>
       </div>
     </div>
     <div class="step">
@@ -177,8 +177,10 @@ function clip() {
   var json = JSON.stringify(d);
   var enc = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   var url = ORIGIN + '/app?clip=' + enc;
-  var w = window.open(url, '_blank');
-  if (!w) location.href = url;
+  var W = 400, H = 580;
+  var x = (window.screenX || 0) + (window.outerWidth || screen.width) - W - 24, y = (window.screenY || 0) + 90;
+  var w = window.open(url + '&mini=1', 'cocon-clip', 'popup=yes,width=' + W + ',height=' + H + ',left=' + x + ',top=' + y);
+  if (w) { try { w.focus(); } catch (e) {} } else { location.href = url; }
 }
 
 (function () {
