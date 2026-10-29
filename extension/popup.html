@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Ajouter à Cocon</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="brand">cocon<span>.</span></header>
+
+  <main id="view-loading" class="view center">
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="muted">Lecture de la page…</p>
+  </main>
+
+  <main id="view-empty" class="view center" hidden>
+    <p class="title">Aucun produit sur cette page</p>
+    <p class="muted">Ouvrez la fiche d'un produit sur un site marchand, puis cliquez à nouveau sur l'icône Cocon.</p>
+  </main>
+
+  <main id="view-product" class="view" hidden>
+    <div class="photo"><img id="p-img" alt=""></div>
+    <p class="title" id="p-name"></p>
+    <p class="muted" id="p-meta"></p>
+
+    <div id="block-connect" hidden>
+      <p class="note">Connectez une fois l'extension à votre compte Cocon pour ranger vos produits.</p>
+      <button class="btn" id="btn-connect">Connecter mon compte</button>
+    </div>
+
+    <div id="block-add" hidden>
+      <label class="dest" for="room">Ranger dans</label>
+      <select id="room"></select>
+      <button class="btn" id="btn-add">Ajouter</button>
+    </div>
+
+    <div id="block-noproject" hidden>
+      <p class="note">Vous n'avez pas encore de projet. Créez-en un pour y ranger vos produits.</p>
+      <button class="btn" id="btn-create">Créer un projet</button>
+    </div>
+
+    <div id="block-done" hidden>
+      <p class="done" id="done-text"></p>
+      <div class="row">
+        <button class="btn btn-ghost" id="btn-undo">Annuler</button>
+        <button class="btn" id="btn-open">Voir dans Cocon</button>
+      </div>
+    </div>
+
+    <p class="error" id="error" hidden></p>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

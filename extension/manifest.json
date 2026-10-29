@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Ajouter à Cocon",
+  "short_name": "Cocon",
+  "version": "0.1.0",
+  "description": "Rangez un produit dans votre projet Cocon en un clic, sans quitter le site du marchand.",
+  "action": {
+    "default_title": "Ajouter à Cocon",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://firestore.googleapis.com/*",
+    "https://securetoken.googleapis.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cocon-app.fr/*",
+        "https://www.cocon-app.fr/*",
+        "https://mini--ephemeral-syrniki-e31b2e.netlify.app/*",
+        "https://beta--ephemeral-syrniki-e31b2e.netlify.app/*"
+      ],
+      "js": ["connect.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
