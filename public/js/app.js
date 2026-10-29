@@ -39,7 +39,7 @@ async function showDashboard() {
     allItems = [];
     cleanupListeners();
     loadProjects();
-    loadUserProfile().then(renderNews);
+    loadUserProfile().then(() => { renderNews(); refreshOneClickBadges(); });
 }
 
 async function loadProjects() {
@@ -267,6 +267,9 @@ function selectRoom(index) {
     renderProjectSidebar();
     updateRoomHeader();
     renderItems();
+    if (typeof refreshOneClickBadges === 'function') {
+        if (userProfile) refreshOneClickBadges(); else loadUserProfile().then(refreshOneClickBadges);
+    }
 }
 
 let currentCategoryFilter = 'all';
@@ -2049,6 +2052,35 @@ function handleSmartLink(url) {
 
 // Après l'enregistrement : si la récupération tourne encore pour ce lien,
 // on complète la fiche dès qu'elle aboutit (sans écraser ce que l'utilisateur a saisi).
+// ─── Présentation de l'ajout en un clic (en-tête de pièce, pièce vide, Nouveautés) ───
+function showOneClick(from) {
+    track('oneclick_open', { from });
+    if (userProfile && !userProfile.oneClickSeen) { updateUserProfile({ oneClickSeen: true }); refreshOneClickBadges(); }
+    const installed = !!(userProfile && userProfile.buttonInstalled);
+    const actions = document.getElementById('oneclick-actions');
+    if (installed) {
+        document.getElementById('oneclick-title').textContent = 'Votre bouton est prêt';
+        document.getElementById('oneclick-text').textContent = 'Ouvrez la fiche d\'un produit sur le site du marchand, puis cliquez ＋ Ajouter à Cocon dans votre barre de favoris. Choisissez la pièce, cliquez Ajouter : c\'est rangé.';
+        actions.innerHTML = `<a class="btn-primary-app" href="https://www.maisonsdumonde.com/FR/fr" target="_blank" rel="noopener" onclick="track('practice_next', { site: 'mdm', from: 'oneclick' })">Essayer sur Maisons du Monde</a>
+            <a class="news-later" href="/ajouter" target="_blank" onclick="track('install_open', { from: 'oneclick-reinstall' })">Réinstaller le bouton</a>`;
+    } else {
+        document.getElementById('oneclick-title').textContent = 'Ajoutez un produit depuis n\'importe quel site';
+        document.getElementById('oneclick-text').textContent = 'Maisons du Monde, La Redoute, IKEA… Sur la fiche d\'un produit, un clic sur le bouton Ajouter à Cocon et il arrive dans votre pièce, avec son nom, son prix et sa photo.';
+        actions.innerHTML = `<a class="btn-primary-app" href="/ajouter" target="_blank" onclick="track('install_open', { from: 'oneclick' }); closeModalById('modal-oneclick')">Installer le bouton</a>
+            <span class="oneclick-note">20 secondes, sans compte ni extension. Vous l'essayez tout de suite sur une fiche d'essai.</span>`;
+    }
+    document.getElementById('modal-oneclick').classList.add('active');
+}
+
+function refreshOneClickBadges() {
+    const fresh = !(userProfile && (userProfile.oneClickSeen || userProfile.buttonInstalled));
+    const btn = document.getElementById('btn-oneclick');
+    if (btn) btn.classList.toggle('is-new', fresh);
+    const pill = document.getElementById('oneclick-pill');
+    if (pill) pill.style.display = fresh ? '' : 'none';
+    document.querySelectorAll('.empty-way-hero .new-pill').forEach(p => p.style.display = (userProfile && userProfile.buttonInstalled) ? 'none' : '');
+}
+
 // ─── Astuce « bouton » dans la popup d'ajout (ordinateur, tant que le bouton n'a jamais servi) ───
 function updateInstallNudge(isEdit) {
     const el = document.getElementById('install-nudge');
@@ -2121,6 +2153,7 @@ const ANNOUNCEMENTS = [
         textMobile: 'Collez le lien d\'un produit dans Cocon : le nom, le prix et la photo se remplissent seuls. Sur ordinateur, installez aussi le bouton Ajouter à Cocon pour ajouter en un clic.',
         cta: { label: 'Installer le bouton', action: 'install' },
         skipIf: 'buttonInstalled',
+        feature: true,
     },
 ];
 
@@ -2170,16 +2203,27 @@ function renderNews() {
     const a = pending[0];
     if (!a) { card.style.display = 'none'; card.innerHTML = ''; return; }
     const showCta = a.cta && !(a.cta.action === 'install' && isTouchDevice());
-    card.innerHTML = `
+    const feature = a.feature && !isTouchDevice();
+    card.classList.toggle('is-feature', !!feature);
+    const actions = `
+        <div class="news-card-actions">
+            ${showCta ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
+            ${feature ? `<button class="news-later" onclick="track('announcement_click', { id: '${a.id}', cta: 'demo' }); showOneClick('nouveautes')">Voir comment ça marche</button>` : ''}
+            <button class="news-later" onclick="dismissNews('${a.id}')">${showCta ? 'Plus tard' : 'Compris'}</button>
+        </div>`;
+    card.innerHTML = feature ? `
+        <div class="news-card-visual" aria-hidden="true">${document.querySelector('#modal-oneclick .demo-browser').outerHTML}</div>
+        <div class="news-card-main">
+            <span class="news-card-badge" style="align-self:flex-start">Nouveau</span>
+            <div class="news-card-title">${escHtml(a.title)}</div>
+            <div class="news-card-text">${escHtml(newsText(a))}</div>
+            ${actions}
+        </div>` : `
         <span class="news-card-badge">Nouveau</span>
         <div class="news-card-body">
             <div class="news-card-title">${escHtml(a.title)}</div>
             <div class="news-card-text">${escHtml(newsText(a))}</div>
-        </div>
-        <div class="news-card-actions">
-            ${showCta ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
-            <button class="news-later" onclick="dismissNews('${a.id}')">${showCta ? 'Plus tard' : 'Compris'}</button>
-        </div>`;
+        </div>${actions}`;
     if (card.style.display === 'none' || card.dataset.shown !== a.id) {
         card.dataset.shown = a.id;
         track('announcement_view', { id: a.id });
@@ -3774,7 +3818,7 @@ function checkOnboarding() {
         const ov = document.createElement('div');
         ov.id = 'onboarding-tips';
         ov.style.cssText = 'position:fixed;inset:0;background:rgba(26,23,20,0.5);z-index:999;display:flex;align-items:center;justify-content:center';
-        ov.innerHTML = `<div style="background:white;border-radius:16px;padding:2rem;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2)"><h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:0.5rem">Bienvenue sur Cocon ! 🏠</h2><p style="color:var(--deep-brown);font-size:0.85rem;margin-bottom:1.5rem">Voici comment tirer le meilleur de votre espace :</p><div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1.5rem"><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">🛋️</span><div><strong style="font-size:0.82rem">Pièces & Items</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Cliquez sur une pièce, puis "+ Ajouter" pour vos items.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">✨</span><div><strong style="font-size:0.82rem">Inspiration & Post-its</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Onglet "Inspiration" pour photos d'inspo et notes.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">📐</span><div><strong style="font-size:0.82rem">Plans & Dimensions</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Uploadez vos plans et notez les mesures cotées.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">💰</span><div><strong style="font-size:0.82rem">Budget en temps réel</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Tableau de bord budget dans la sidebar.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">🔗</span><div><strong style="font-size:0.82rem">Smart Link</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Collez un lien produit, les champs se remplissent seuls.</span></div></div></div><button onclick="dismissOnboarding()" style="width:100%;padding:0.7rem;background:var(--terracotta);color:white;border:none;border-radius:var(--radius-full);font-size:0.88rem;font-weight:600;cursor:pointer">C'est parti ! 🚀</button></div>`;
+        ov.innerHTML = `<div style="background:white;border-radius:16px;padding:2rem;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.2)"><h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:0.5rem">Bienvenue sur Cocon ! 🏠</h2><p style="color:var(--deep-brown);font-size:0.85rem;margin-bottom:1.5rem">Voici comment tirer le meilleur de votre espace :</p><div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1.5rem"><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">🛋️</span><div><strong style="font-size:0.82rem">Pièces & Items</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Cliquez sur une pièce, puis "+ Ajouter" pour vos items.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">✨</span><div><strong style="font-size:0.82rem">Inspiration & Post-its</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Onglet "Inspiration" pour photos d'inspo et notes.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">📐</span><div><strong style="font-size:0.82rem">Plans & Dimensions</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Uploadez vos plans et notez les mesures cotées.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">💰</span><div><strong style="font-size:0.82rem">Budget en temps réel</strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Tableau de bord budget dans la sidebar.</span></div></div><div style="display:flex;gap:0.6rem;align-items:start"><span style="font-size:1.2rem;flex-shrink:0">⚡</span><div><strong style="font-size:0.82rem">Ajout en un clic <span class="new-pill">Nouveau</span></strong><br><span style="font-size:0.78rem;color:var(--deep-brown);opacity:0.7">Depuis la fiche d'un produit, sur n'importe quel site. Ou collez simplement son lien.</span></div></div></div><button onclick="dismissOnboarding()" style="width:100%;padding:0.7rem;background:var(--terracotta);color:white;border:none;border-radius:var(--radius-full);font-size:0.88rem;font-weight:600;cursor:pointer">C'est parti ! 🚀</button></div>`;
         document.body.appendChild(ov);
     }, 800);
 }

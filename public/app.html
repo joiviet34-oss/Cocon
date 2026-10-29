@@ -317,6 +317,11 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 3H3v18h18V3z"/><path d="M3 9h18M9 3v18"/><path d="M3 15h6"/></svg>
                             Dimensions
                         </button>
+                        <button class="btn-oneclick" id="btn-oneclick" onclick="showOneClick('entete')">
+                            <span class="btn-oneclick-icon" aria-hidden="true">⚡</span>
+                            Depuis un site
+                            <span class="new-pill" id="oneclick-pill">Nouveau</span>
+                        </button>
                         <button class="btn-primary-app" onclick="showAddItemModal()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
                             Ajouter
@@ -392,10 +397,21 @@
                 </div>
 
                 <div id="room-empty" class="room-empty">
-                    <div class="room-empty-icon">📦</div>
-                    <h3>Cette pièce est vide</h3>
-                    <p>Ajoutez votre premier élément : meuble, déco, peinture, textile…</p>
-                    <button class="btn-primary-app" onclick="showAddItemModal()">Ajouter un élément</button>
+                    <h3>Cette pièce attend ses premiers produits</h3>
+                    <p>Deux façons de les ajouter, choisissez la vôtre.</p>
+                    <div class="empty-ways">
+                        <button class="empty-way empty-way-hero" onclick="showOneClick('piece-vide')">
+                            <span class="new-pill">Nouveau</span>
+                            <span class="empty-way-icon">⚡</span>
+                            <strong>Depuis le site du marchand</strong>
+                            <span>Un clic sur la fiche produit, et il est rangé ici avec sa photo et son prix.</span>
+                        </button>
+                        <button class="empty-way" onclick="showAddItemModal()">
+                            <span class="empty-way-icon">🔗</span>
+                            <strong>Coller un lien ou saisir</strong>
+                            <span>Collez le lien d'un produit, ou remplissez la fiche à la main.</span>
+                        </button>
+                    </div>
                     <div class="room-empty-collab">
                         <span class="room-empty-collab-divider">ou</span>
                         <button class="btn-collab-ghost" onclick="showShareModal()">
@@ -824,6 +840,36 @@
 
     <!-- Toast -->
     <div id="toast" class="toast"></div>
+
+    <!-- Présentation de l'ajout en un clic -->
+    <div class="modal-overlay" id="modal-oneclick" onclick="closeModal(event, 'modal-oneclick')">
+        <div class="modal oneclick-modal" onclick="event.stopPropagation()">
+            <button class="modal-close oneclick-close" aria-label="Fermer" onclick="closeModalById('modal-oneclick')">&times;</button>
+            <div class="oneclick-demo" aria-hidden="true">
+                <div class="demo-browser">
+                    <div class="demo-bar"><span class="demo-dots"></span><span class="demo-url">maisonsdumonde.com/fauteuil-oslo</span></div>
+                    <div class="demo-favs"><span class="demo-fav">＋ Ajouter à Cocon</span><span class="demo-cursor"></span></div>
+                    <div class="demo-page">
+                        <div class="demo-photo"></div>
+                        <div class="demo-lines"><b>Fauteuil Oslo</b><i>890 €</i><em></em><em></em></div>
+                    </div>
+                    <div class="demo-tray">
+                        <div class="demo-photo demo-photo-sm"></div>
+                        <div class="demo-tray-txt"><b>Fauteuil Oslo · 890 €</b><span>Ranger dans <u>🛋️ Salon</u></span></div>
+                        <span class="demo-add">Ajouter</span>
+                    </div>
+                    <div class="demo-done">✓ Ajouté au Salon</div>
+                </div>
+                <ol class="demo-steps"><li>Sur la fiche produit</li><li>Un clic sur le favori</li><li>Rangé dans votre pièce</li></ol>
+            </div>
+            <div class="oneclick-body">
+                <div class="oneclick-eyebrow">Nouveau dans Cocon</div>
+                <h2 id="oneclick-title">Ajoutez un produit depuis n'importe quel site</h2>
+                <p id="oneclick-text">Maisons du Monde, La Redoute, IKEA… Sur la fiche d'un produit, un clic sur le bouton Ajouter à Cocon et il arrive dans votre pièce, avec son nom, son prix et sa photo.</p>
+                <div class="oneclick-actions" id="oneclick-actions"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Historique des nouveautés -->
     <div class="modal-overlay" id="modal-news" onclick="closeModal(event, 'modal-news')">
