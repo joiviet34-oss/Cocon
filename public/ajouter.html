@@ -179,7 +179,7 @@ function clip() {
   var url = ORIGIN + '/app?clip=' + enc;
   var W = 400, H = 580;
   var x = (window.screenX || 0) + (window.outerWidth || screen.width) - W - 24, y = (window.screenY || 0) + 90;
-  var w = window.open(url + '&mini=1', 'cocon-clip', 'popup=yes,width=' + W + ',height=' + H + ',left=' + x + ',top=' + y);
+  var w = window.open(url + '&mini=1', 'cocon' + Date.now(), 'popup=yes,width=' + W + ',height=' + H + ',left=' + x + ',top=' + y);
   if (w) { try { w.focus(); } catch (e) {} } else { location.href = url; }
 }
 

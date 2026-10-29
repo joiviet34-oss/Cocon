@@ -715,6 +715,9 @@ html.is-mini .clip-tray-actions { flex-direction: column; align-items: stretch; 
 html.is-mini .clip-tray-add { order: 0; width: 100%; justify-content: center; padding: 0.8rem; font-size: 1rem; }
 html.is-mini .clip-tray-actions .clip-tray-link { order: 1; }
 html.is-mini .clip-tray-close { position: absolute; top: 0.8rem; right: 0.9rem; }
+html.is-mini-wide .clip-tray { left: 50%; right: auto; width: 420px; transform: translateX(-50%); }
+html.is-mini-wide body, html.is-mini-wide .clip-tray { background: var(--cream); }
+html.is-mini-wide .clip-tray-close { position: fixed; top: 1rem; right: 1.25rem; }
 html.is-mini .toast { bottom: -60px; }
 html.is-mini .toast.show { bottom: 1rem; }
 
