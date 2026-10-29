@@ -288,6 +288,15 @@
         .foot-bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 24px; border-top: 1px solid #3A3D4A; font-size: 13px; color: rgba(244,239,230,.62); }
         .foot-bottom em { font-family: var(--serif); color: var(--ochre); }
 
+        /* Démo vidéo */
+        .demo-sec { border-top: 1px solid var(--line); }
+        .demo-sec .wrap { padding-top: 96px; padding-bottom: 96px; display: flex; flex-direction: column; gap: 48px; }
+        .demo-sec .sec-head .label-accent { display: block; margin-bottom: 16px; }
+        .demo-ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .demo-frame { margin: 0; }
+        .demo-frame video { display: block; width: 100%; height: auto; aspect-ratio: 1172 / 720; object-fit: cover; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(28,31,42,.35); }
+        .demo-frame figcaption { margin-top: 14px; }
+
         /* Responsive */
         @media (max-width: 1180px) {
             :root { --pad: 56px; }
@@ -302,6 +311,7 @@
             .brand-grid div:nth-child(3) { border-right: none; }
             .brand-grid div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
             .sec-head, .steps .wrap, .final-box { grid-template-columns: 1fr; gap: 32px; }
+            .demo-sec .wrap { padding-top: 64px; padding-bottom: 64px; gap: 32px; }
             .bento-grid { grid-template-columns: 1fr; }
             .card-wide { grid-column: auto; grid-template-columns: 1fr; gap: 32px; padding: 40px; }
             .card-dark .split { order: 2; }
@@ -461,6 +471,31 @@
             </div>
         </section>
 
+        <section class="demo-sec" id="demo" aria-labelledby="demo-title">
+            <div class="wrap">
+                <div class="sec-head">
+                    <div>
+                        <span class="label-accent">Démo, en temps réel</span>
+                        <h2 id="demo-title">Vu sur un site, <span class="it">rangé dans Cocon</span>.</h2>
+                    </div>
+                    <div class="sec-head-side">
+                        <p>Sur la fiche d'un produit, un clic sur le bouton Ajouter à Cocon. Le nom, le prix et la photo arrivent dans la bonne pièce, sans copier-coller ni capture d'écran.</p>
+                        <div class="demo-ctas">
+                            <a href="/app" class="btn btn-accent">Ouvrir mon projet <span class="arrow">→</span></a>
+                            <a href="/ajouter" class="link-box">Installer le bouton →</a>
+                        </div>
+                    </div>
+                </div>
+                <figure class="demo-frame">
+                    <video id="demo-video" muted loop playsinline preload="none" poster="/video/demo-ajouter-a-cocon.jpg" width="1172" height="720" aria-label="Démonstration : sur la fiche d'un tabouret Kave Home, un clic sur Ajouter à Cocon, puis le produit est rangé dans le salon du projet">
+                        <source src="/video/demo-ajouter-a-cocon.webm" type="video/webm">
+                        <source src="/video/demo-ajouter-a-cocon.mp4" type="video/mp4">
+                    </video>
+                    <figcaption class="label">Un tabouret repéré sur Kave Home, rangé dans le salon. Sans montage, à vitesse réelle.</figcaption>
+                </figure>
+            </div>
+        </section>
+
         <section class="brands" aria-label="Marques">
             <div class="wrap">
                 <p class="label">119 marques sélectionnées dans 8 univers, à explorer depuis votre projet</p>
@@ -515,9 +550,10 @@
 
                     <article class="card">
                         <div class="card-text">
-                            <span class="label-accent">03. Smart Link</span>
-                            <h3>Un lien collé, et tout est rempli.</h3>
-                            <p>Nom, prix et photo sont récupérés automatiquement. Fini les onglets oubliés et les captures d'écran.</p>
+                            <span class="label-accent">03. Ajout en un clic</span>
+                            <h3>Un clic, et c'est rangé.</h3>
+                            <p>Depuis la fiche produit de n'importe quel site, ou en collant son lien. Le nom, le prix et la photo arrivent tout seuls.</p>
+                            <a href="#demo" class="link-line" style="align-self: flex-start;">Voir la démo</a>
                         </div>
                         <div class="smart">
                             <div class="smart-url">tikamoon.com/art-meuble-salle-de-bain-noyer-moon-80</div>
@@ -681,5 +717,23 @@
         </div>
     </footer>
 
+    <script>
+    // Démo : lecture seulement quand la vidéo est à l'écran, jamais pour qui a réduit les animations
+    (function () {
+        var v = document.getElementById('demo-video');
+        if (!v) return;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce || !('IntersectionObserver' in window)) { v.controls = true; v.preload = 'metadata'; return; }
+        var started = false;
+        new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                    if (!started) { started = true; try { gtag('event', 'demo_video_view', { page: 'accueil' }); } catch (err) {} }
+                    var p = v.play(); if (p && p.catch) p.catch(function () { v.controls = true; });
+                } else { v.pause(); }
+            });
+        }, { threshold: 0.35 }).observe(v);
+    })();
+    </script>
 </body>
 </html>

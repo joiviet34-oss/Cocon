@@ -833,3 +833,11 @@ body.has-clip-tray .feedback-fab { visibility: hidden; }
 @media (max-width: 760px) { .news-card.is-feature .news-card-visual { display: none; } }
 .btn-oneclick { white-space: nowrap; }
 a.btn-primary-app, .oneclick-actions a { text-decoration: none; }
+
+/* Vidéo de démonstration (l'animation CSS sert de secours si la vidéo ne charge pas) */
+.demo-video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; background: var(--white); border: 1px solid var(--sand); box-shadow: var(--shadow-md); }
+.demo-media .demo-browser { display: none; }
+.demo-media.no-video .demo-browser { display: block; }
+.demo-media.no-video .demo-video { display: none; }
+.news-card.is-feature .news-card-visual .demo-media { width: 100%; }
+.news-card.is-feature .news-card-visual .demo-video { border-radius: 10px; }

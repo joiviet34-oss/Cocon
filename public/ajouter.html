@@ -28,6 +28,8 @@
   h1 em { color: var(--terracotta); font-style: italic; }
   .lede { margin-top: 18px; font-size: 1.05rem; color: #44474f; max-width: 560px; }
 
+  .demo { display: block; width: 100%; aspect-ratio: 16 / 9; margin-top: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 10px 30px rgba(28, 31, 42, 0.08); }
+  @media (prefers-reduced-motion: reduce) { .demo { display: none; } }
   .drag-zone { margin-top: 40px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 36px 28px; text-align: center; }
   .bookmarklet { display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; background: var(--terracotta); color: #fff; border-radius: 100px; font-weight: 500; font-size: 1rem; text-decoration: none; cursor: grab; box-shadow: 0 6px 18px rgba(184, 85, 58, 0.25); }
   .bookmarklet:active { cursor: grabbing; }
@@ -70,6 +72,11 @@
   <div class="eyebrow">Ajout en un clic</div>
   <h1>Ajoutez un produit <em>depuis n'importe quel site</em>.</h1>
   <p class="lede">Installez le bouton une fois. Ensuite, sur une fiche produit Maisons du Monde, La Redoute, IKEA ou ailleurs, un clic suffit : Cocon s'ouvre avec le nom, le prix et la photo déjà remplis.</p>
+
+  <video class="demo" autoplay muted loop playsinline preload="metadata" poster="/video/demo-ajouter-a-cocon.jpg" aria-label="Démonstration : un clic sur le bouton depuis une fiche produit, et le produit arrive dans Cocon">
+    <source src="/video/demo-ajouter-a-cocon.webm" type="video/webm">
+    <source src="/video/demo-ajouter-a-cocon.mp4" type="video/mp4">
+  </video>
 
   <div class="drag-zone">
     <a class="bookmarklet" id="bookmarklet" href="#">＋ Ajouter à Cocon</a>

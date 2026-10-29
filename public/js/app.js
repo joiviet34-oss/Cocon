@@ -2070,6 +2070,7 @@ function showOneClick(from) {
             <span class="oneclick-note">20 secondes, sans compte ni extension. Vous l'essayez tout de suite sur une fiche d'essai.</span>`;
     }
     document.getElementById('modal-oneclick').classList.add('active');
+    setupDemoVideos(document.getElementById('modal-oneclick'));
 }
 
 function refreshOneClickBadges() {
@@ -2212,7 +2213,7 @@ function renderNews() {
             <button class="news-later" onclick="dismissNews('${a.id}')">${showCta ? 'Plus tard' : 'Compris'}</button>
         </div>`;
     card.innerHTML = feature ? `
-        <div class="news-card-visual" aria-hidden="true">${document.querySelector('#modal-oneclick .demo-browser').outerHTML}</div>
+        <div class="news-card-visual" aria-hidden="true">${document.querySelector('#modal-oneclick .demo-media').outerHTML}</div>
         <div class="news-card-main">
             <span class="news-card-badge" style="align-self:flex-start">Nouveau</span>
             <div class="news-card-title">${escHtml(a.title)}</div>
@@ -2224,6 +2225,7 @@ function renderNews() {
             <div class="news-card-title">${escHtml(a.title)}</div>
             <div class="news-card-text">${escHtml(newsText(a))}</div>
         </div>${actions}`;
+    if (feature) setupDemoVideos(card);
     if (card.style.display === 'none' || card.dataset.shown !== a.id) {
         card.dataset.shown = a.id;
         track('announcement_view', { id: a.id });
@@ -2246,6 +2248,19 @@ function dismissNews(id) {
     track('announcement_dismiss', { id });
     markNewsSeen(id);
 }
+
+// Vidéos de démo : pas d'animation automatique pour qui l'a désactivée dans son système
+function setupDemoVideos(root = document) {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    root.querySelectorAll('.demo-video').forEach(v => {
+        v.muted = true;
+        const last = v.querySelector('source:last-of-type');
+        if (last) last.onerror = () => v.closest('.demo-media')?.classList.add('no-video');
+        if (reduce) { v.removeAttribute('autoplay'); v.pause(); v.controls = true; }
+        else v.play?.().catch(() => {});
+    });
+}
+document.addEventListener('DOMContentLoaded', () => setupDemoVideos());
 
 function showNewsModal() {
     document.querySelectorAll('.user-dropdown.open').forEach(d => d.classList.remove('open'));

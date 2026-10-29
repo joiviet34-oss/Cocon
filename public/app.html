@@ -846,6 +846,11 @@
         <div class="modal oneclick-modal" onclick="event.stopPropagation()">
             <button class="modal-close oneclick-close" aria-label="Fermer" onclick="closeModalById('modal-oneclick')">&times;</button>
             <div class="oneclick-demo" aria-hidden="true">
+                <div class="demo-media">
+                <video class="demo-video" autoplay muted loop playsinline preload="metadata" poster="/video/demo-ajouter-a-cocon.jpg">
+                    <source src="/video/demo-ajouter-a-cocon.webm" type="video/webm">
+                    <source src="/video/demo-ajouter-a-cocon.mp4" type="video/mp4" onerror="this.closest('.demo-media').classList.add('no-video')">
+                </video>
                 <div class="demo-browser">
                     <div class="demo-bar"><span class="demo-dots"></span><span class="demo-url">maisonsdumonde.com/fauteuil-oslo</span></div>
                     <div class="demo-favs"><span class="demo-fav">＋ Ajouter à Cocon</span><span class="demo-cursor"></span></div>
@@ -859,6 +864,7 @@
                         <span class="demo-add">Ajouter</span>
                     </div>
                     <div class="demo-done">✓ Ajouté au Salon</div>
+                </div>
                 </div>
                 <ol class="demo-steps"><li>Sur la fiche produit</li><li>Un clic sur le favori</li><li>Rangé dans votre pièce</li></ol>
             </div>
