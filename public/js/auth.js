@@ -6,8 +6,27 @@ let currentUser = null;
 let isSignUp = false;
 
 // ─── Auth State Listener ─────────────────────────────────────
+// ─── Extension Chrome « Ajouter à Cocon » ─────────────────────
+// L'extension (extension/connect.js) dit bonjour sur cette page ; si l'utilisateur
+// est connecté, on lui confie sa session pour qu'elle range les produits à sa place.
+let extensionWaiting = false;
+function sendSessionToExtension() {
+    if (!extensionWaiting || !currentUser || currentUser.isAnonymous) return;
+    window.postMessage({ type: 'cocon-ext-auth', refreshToken: currentUser.refreshToken, uid: currentUser.uid,
+        name: currentUser.displayName || currentUser.email || '' }, location.origin);
+}
+window.addEventListener('message', e => {
+    if (e.source !== window || e.origin !== location.origin || !e.data) return;
+    if (e.data.type === 'cocon-ext-hello') { extensionWaiting = true; sendSessionToExtension(); }
+    if (e.data.type === 'cocon-ext-connected' && new URLSearchParams(location.search).get('ext') === '1') {
+        if (typeof toast === 'function') toast('✓ Extension connectée. Vous pouvez fermer cet onglet.');
+        if (typeof track === 'function') track('extension_connected');
+    }
+});
+
 auth.onAuthStateChanged(user => {
     currentUser = user;
+    sendSessionToExtension();
     const params = new URLSearchParams(window.location.search);
     const shareId = params.get('share');
     const viewId = params.get('view');
@@ -106,6 +125,7 @@ function toggleAuthMode(e) {
 // ─── Logout ───────────────────────────────────────────────────
 async function logout() {
     await auth.signOut();
+    window.postMessage({ type: 'cocon-ext-logout' }, location.origin);
     const fab = document.getElementById('feedback-fab');
     if (fab) { fab.style.display = 'none'; if (typeof closeFeedbackPanel === 'function') closeFeedbackPanel(); }
     showScreen('auth-screen');
