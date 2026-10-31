@@ -16,7 +16,7 @@ let unsubComments = null;
 function track(name, params = {}) {
     try { if (typeof gtag === 'function') gtag('event', name, params); } catch {}
 }
-let itemAddMethod = 'manuel'; // 'manuel' | 'lien' | 'bouton' : comment le produit en cours a été rempli
+let itemAddMethod = 'manuel'; // 'manuel' | 'lien' : comment le produit en cours a été rempli
 
 // ─── SCREEN MANAGEMENT ───────────────────────────────────────
 
@@ -2072,17 +2072,7 @@ function enrichItemWhenReady(docRef, saved) {
 // ─── NOUVEAUTÉS ──────────────────────────────────────────────
 // Les annonces vivent ici, la plus récente en premier. Ce que l'utilisateur a déjà vu
 // est enregistré dans son profil Firestore (users/{uid}.seenNews) : suivi d'un appareil à l'autre.
-const ANNOUNCEMENTS = [
-    {
-        id: 'bouton-ajouter-2026-10',
-        date: '2026-10-27',
-        title: 'Ajoutez un produit depuis n\'importe quel site',
-        text: 'Sur une fiche Maisons du Monde, La Redoute ou IKEA, un clic sur le bouton Ajouter à Cocon suffit. Le nom, le prix et la photo arrivent tout seuls dans la pièce de votre choix.',
-        textMobile: 'Collez le lien d\'un produit dans Cocon : le nom, le prix et la photo se remplissent seuls. Sur ordinateur, installez aussi le bouton Ajouter à Cocon pour ajouter en un clic.',
-        cta: { label: 'Installer le bouton', action: 'install' },
-        skipIf: 'buttonInstalled',
-    },
-];
+const ANNOUNCEMENTS = [];
 
 let userProfile = null;
 const isTouchDevice = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
@@ -2127,7 +2117,7 @@ function renderNews() {
     if (!card) return;
     const a = pending[0];
     if (!a) { card.style.display = 'none'; card.innerHTML = ''; return; }
-    const showCta = a.cta && !(a.cta.action === 'install' && isTouchDevice());
+    const showCta = !!a.cta;
     card.innerHTML = `
         <span class="news-card-badge">Nouveau</span>
         <div class="news-card-body">
@@ -2150,10 +2140,7 @@ function newsAction(id) {
     if (!a) return;
     track('announcement_click', { id });
     markNewsSeen(id);
-    if (a.cta.action === 'install') {
-        track('install_open', { from: 'news' });
-        window.open('/ajouter', '_blank');
-    }
+    if (a.cta.url) window.open(a.cta.url, '_blank');
 }
 
 function dismissNews(id) {
@@ -2170,7 +2157,7 @@ function showNewsModal() {
             <div class="news-item-date">${escHtml(fmt(a.date))}</div>
             <div class="news-item-title">${escHtml(a.title)}</div>
             <div class="news-item-text">${escHtml(newsText(a))}</div>
-            ${a.cta && !(a.cta.action === 'install' && isTouchDevice()) ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
+            ${a.cta ? `<button class="btn-primary-app" onclick="newsAction('${a.id}')">${escHtml(a.cta.label)}</button>` : ''}
         </article>`).join('');
     document.getElementById('modal-news').classList.add('active');
     // Ouvrir l'historique vaut lecture de tout
@@ -2179,116 +2166,6 @@ function showNewsModal() {
     ANNOUNCEMENTS.forEach(a => seen.add(a.id));
     if (seen.size !== before) { updateUserProfile({ seenNews: [...seen] }); renderNews(); }
 }
-
-// ─── BOUTON « AJOUTER À COCON » (lecture dans le navigateur de l'utilisateur) ───
-// Le favori lit la fiche produit sur le site du marchand et ouvre /app?clip=<données>.
-// On garde le produit en attente (même après connexion) jusqu'à ce que l'utilisateur
-// choisisse une pièce et clique « Ajouter à cette pièce ».
-
-let pendingClip = null;
-
-(function readClipFromUrl() {
-    try {
-        const params = new URLSearchParams(location.search);
-        const raw = params.get('clip');
-        if (raw) {
-            const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
-            const json = decodeURIComponent(escape(atob(b64 + '==='.slice((b64.length + 3) % 4))));
-            const c = JSON.parse(json);
-            if (c && c.u && /^https?:/.test(c.u)) {
-                try { sessionStorage.setItem('coconClip', JSON.stringify(c)); } catch {}
-            }
-            params.delete('clip');
-            const qs = params.toString();
-            history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-        }
-        if (raw) track('clip_received');
-        const stored = sessionStorage.getItem('coconClip');
-        if (stored) pendingClip = JSON.parse(stored);
-    } catch (e) { console.warn('Clip illisible', e); }
-})();
-
-function clipName(c) {
-    let n = String(c.n || '').replace(/\s+/g, ' ').trim();
-    const host = (() => { try { return new URL(c.u).hostname.replace(/^www\./, '').split('.')[0].toLowerCase(); } catch { return ''; } })();
-    const parts = n.split(/\s[|–—-]\s/);
-    if (parts.length > 1) {
-        const last = parts[parts.length - 1].toLowerCase().replace(/[\s.-]/g, '');
-        const site = String(c.s || '').toLowerCase().replace(/[\s.-]/g, '');
-        if ((host && last.includes(host.replace(/-/g, ''))) || (site && last.includes(site))) n = parts.slice(0, -1).join(' - ');
-    }
-    return n.slice(0, 100);
-}
-
-function clipPrice(v) {
-    if (v == null || v === '') return null;
-    let s = String(v).replace(/[^\d.,]/g, '');
-    if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
-    else s = s.replace(',', '.');
-    const n = parseFloat(s);
-    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
-}
-
-function clipSite(c) {
-    if (c.s) return c.s;
-    try {
-        const h = new URL(c.u).hostname.replace(/^www\./, '').split('.')[0];
-        return h.charAt(0).toUpperCase() + h.slice(1);
-    } catch { return ''; }
-}
-
-function renderClipTray() {
-    const tray = document.getElementById('clip-tray');
-    if (!tray) return;
-    if (!pendingClip) { tray.style.display = 'none'; return; }
-    const price = clipPrice(pendingClip.p);
-    document.getElementById('clip-tray-name').textContent = clipName(pendingClip) || 'Produit';
-    const img = document.getElementById('clip-tray-img');
-    img.src = pendingClip.i || '';
-    const btn = document.getElementById('clip-tray-add');
-    const inRoom = !!(currentProject && currentRoom !== null && !isSharedView);
-    btn.disabled = !inRoom;
-    const meta = [clipSite(pendingClip), price ? formatPrice(price) : ''].filter(Boolean).join(' · ');
-    document.getElementById('clip-tray-meta').textContent = inRoom
-        ? meta
-        : (meta ? meta + ' · ' : '') + 'ouvrez un projet et choisissez une pièce';
-    tray.style.display = '';
-}
-
-function addClipToRoom() {
-    if (!pendingClip || !currentProject || currentRoom === null) return;
-    const c = pendingClip;
-    showAddItemModal();
-    document.getElementById('item-input-link').value = c.u;
-    const d = { name: clipName(c), price: clipPrice(c.p), image: c.i || null, site: clipSite(c), ref: c.r || null };
-    const filled = applyProductMeta(d);
-    itemAddMethod = 'bouton';
-    if (!userProfile || !userProfile.buttonInstalled) updateUserProfile({ buttonInstalled: true });
-    const hint = document.getElementById('smart-link-hint');
-    hint.textContent = filled.length ? `✨ ${filled.join(', ')} récupéré${filled.length > 1 ? 's' : ''} depuis la page` : '';
-    hint.className = 'smart-link-hint success';
-    // Le prix manque (rare) : on tente quand même la récupération serveur pour le compléter
-    if (!d.price) handleSmartLink(c.u);
-    dismissClip();
-}
-
-function dismissClip() {
-    pendingClip = null;
-    try { sessionStorage.removeItem('coconClip'); } catch {}
-    renderClipTray();
-}
-
-// Le bandeau suit la navigation : actif dès qu'une pièce est ouverte
-['selectRoom', 'showDashboard', 'openProject'].forEach(fnName => {
-    const original = window[fnName];
-    if (typeof original !== 'function') return;
-    window[fnName] = function (...args) {
-        const r = original.apply(this, args);
-        Promise.resolve(r).finally(() => setTimeout(renderClipTray, 0));
-        return r;
-    };
-});
-document.addEventListener('DOMContentLoaded', renderClipTray);
 
 // ─── INSPIRATION SPLIT VIEW & POST-ITS ───────────────────────
 

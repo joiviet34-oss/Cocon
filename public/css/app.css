@@ -673,23 +673,6 @@ body { font-family: var(--font-body); background: var(--cream); color: var(--cha
 @media (max-width: 768px) { .wishlist-grid { grid-template-columns: 1fr; } .wishlist-header { flex-direction: column; gap: 0.8rem; align-items: flex-start; } }
 
 
-/* ─── Bouton « Ajouter à Cocon » : produit en attente ─── */
-.clip-tray { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 250; display: flex; align-items: center; gap: 0.9rem; width: min(680px, calc(100vw - 32px)); padding: 0.7rem 0.8rem 0.7rem 0.7rem; background: var(--white); border: 1px solid var(--sand); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
-.clip-tray-img { width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; background: var(--cream); flex-shrink: 0; }
-.clip-tray-img[src=""] { visibility: hidden; }
-.clip-tray-info { flex: 1; min-width: 0; }
-.clip-tray-name { font-weight: 600; font-size: 0.9rem; color: var(--charcoal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.clip-tray-meta { font-size: 0.8rem; color: var(--deep-brown); opacity: 0.75; margin-top: 2px; }
-.clip-tray-add { white-space: nowrap; }
-.clip-tray-add:disabled { opacity: 0.45; cursor: not-allowed; }
-.clip-tray-close { background: none; border: none; font-size: 1.4rem; line-height: 1; color: var(--deep-brown); opacity: 0.5; cursor: pointer; padding: 0 0.3rem; }
-.clip-tray-close:hover { opacity: 1; }
-@media (max-width: 560px) {
-  .clip-tray { flex-wrap: wrap; }
-  .clip-tray-add { width: 100%; order: 3; }
-}
-
-
 /* ─── Nouveautés ─── */
 .news-card { position: relative; display: flex; gap: 1.1rem; align-items: center; margin: 0 0 1.5rem; padding: 1.1rem 1.25rem; background: var(--white); border: 1px solid var(--sand); border-left: 4px solid var(--terracotta); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
 .news-card-badge { flex-shrink: 0; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--white); background: var(--terracotta); border-radius: var(--radius-full); padding: 0.25rem 0.6rem; }
